@@ -12,6 +12,9 @@ export class AuthResponseUserDto {
 
   @ApiProperty()
   lastName: string;
+
+  @ApiProperty({ example: '+15551234567', nullable: true })
+  phone: string | null;
 }
 
 export class AuthResponseDto {

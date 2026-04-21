@@ -35,6 +35,7 @@ export class UsersService {
       passwordHash,
       firstName: createUserDto.firstName,
       lastName: createUserDto.lastName,
+      phone: createUserDto.phone,
     });
     try {
       return await this.usersRepository.save(user);

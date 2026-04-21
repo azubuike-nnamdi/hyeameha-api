@@ -21,6 +21,7 @@ describe('Hyeameha API e2e', () => {
       email: string;
       firstName: string;
       lastName: string;
+      phone?: string | null;
       password?: string;
     };
     accessToken: string;
@@ -72,11 +73,13 @@ describe('Hyeameha API e2e', () => {
         lastName: 'Tester',
         email,
         password: PASSWORD,
+        phone: '+15551234567',
       })
       .expect(201);
 
     const body = res.body as AuthResponseBody;
     expect(body.user.email).toBe(email);
+    expect(body.user.phone).toBe('+15551234567');
     expect(body.user.password).toBeUndefined();
     expect(body.accessToken).toBeDefined();
     expect(typeof body.accessToken).toBe('string');
@@ -96,6 +99,7 @@ describe('Hyeameha API e2e', () => {
         lastName: 'User',
         email: dupEmail,
         password: PASSWORD,
+        phone: '+15551234568',
       })
       .expect(201);
 
@@ -107,6 +111,7 @@ describe('Hyeameha API e2e', () => {
         lastName: 'Name',
         email: dupEmail,
         password: PASSWORD,
+        phone: '+15551234569',
       })
       .expect(409);
   });

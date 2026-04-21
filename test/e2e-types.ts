@@ -13,6 +13,7 @@ export type AuthSuccessBody = {
     email: string;
     firstName: string;
     lastName: string;
+    phone: string | null;
   };
 };
 
@@ -21,4 +22,5 @@ export type PublicUserBody = {
   email: string;
   firstName: string;
   lastName: string;
+  phone: string | null;
 };
