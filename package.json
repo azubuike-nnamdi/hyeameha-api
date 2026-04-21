@@ -6,6 +6,8 @@
   "private": true,
   "license": "MIT",
   "scripts": {
+    "preinstall": "node scripts/enforce-pnpm.mjs",
+    "postinstall": "node scripts/enforce-pnpm.mjs",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
