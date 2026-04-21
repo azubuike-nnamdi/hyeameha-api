@@ -1,0 +1,4 @@
+echo "husky(pre-push): nest build…"
+pnpm run build
+echo "husky(pre-push): unit tests…"
+pnpm run test

@@ -17,8 +17,7 @@ export class UpdateUserDto {
   lastName?: string;
 
   @ApiPropertyOptional({
-    description:
-      'Phone (optional): 7–15 digits only, no + or separators',
+    description: 'Phone (optional): 7–15 digits only, no + or separators',
     example: '15551234567',
   })
   @IsOptional()

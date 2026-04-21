@@ -1,0 +1,2 @@
+echo "husky(pre-commit): lint-staged (eslint on staged *.ts)…"
+pnpm exec lint-staged
