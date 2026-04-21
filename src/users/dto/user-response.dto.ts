@@ -16,7 +16,7 @@ export class UserResponseDto {
   @ApiProperty({ example: 'jane@example.com' })
   email: string;
 
-  @ApiProperty({ example: '+15551234567', nullable: true })
+  @ApiProperty({ example: '15551234567', nullable: true })
   phone: string | null;
 
   @ApiProperty()

@@ -48,7 +48,7 @@ describe('UsersService', () => {
     password: 'Secure1!Pwd',
     firstName: 'A',
     lastName: 'B',
-    phone: '+15551234567',
+    phone: '15551234567',
   };
 
   it('creates user with hashed password', async () => {
@@ -59,7 +59,7 @@ describe('UsersService', () => {
       passwordHash: 'hashed',
       firstName: 'A',
       lastName: 'B',
-      phone: '+15551234567',
+      phone: '15551234567',
       deletedAt: null,
       refreshTokenHash: null,
       createdAt: new Date(),

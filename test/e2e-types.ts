@@ -6,6 +6,7 @@ export type HealthResponseBody = {
 };
 
 export type AuthSuccessBody = {
+  message: string;
   accessToken: string;
   refreshToken: string;
   user: {

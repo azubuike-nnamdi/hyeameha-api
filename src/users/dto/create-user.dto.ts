@@ -1,9 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsString, Matches, MaxLength } from 'class-validator';
-import {
-  E164_PHONE_MESSAGE,
-  E164_PHONE_PATTERN,
-} from '../../common/validation/phone-policy';
+import { PHONE_DIGITS_ONLY_MESSAGE } from '../../common/validation/phone-policy';
 import {
   STRONG_PASSWORD_MESSAGE,
   STRONG_PASSWORD_PATTERN,
@@ -33,10 +30,11 @@ export class CreateUserDto {
   password: string;
 
   @ApiProperty({
-    example: '+15551234567',
-    description: 'E.164 international format',
+    example: '15551234567',
+    description:
+      'Digits only (7–15 characters). No + prefix, spaces, or separators.',
   })
   @IsString()
-  @Matches(E164_PHONE_PATTERN, { message: E164_PHONE_MESSAGE })
+  @Matches(/^\d{7,15}$/, { message: PHONE_DIGITS_ONLY_MESSAGE })
   phone: string;
 }

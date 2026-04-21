@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { PHONE_DIGITS_ONLY_MESSAGE } from '../../common/validation/phone-policy';
 
 /** Profile fields only; email cannot be changed (unique). */
 export class UpdateUserDto {
@@ -15,9 +16,13 @@ export class UpdateUserDto {
   @MaxLength(50)
   lastName?: string;
 
-  @ApiPropertyOptional({ description: 'Phone number (optional)' })
+  @ApiPropertyOptional({
+    description:
+      'Phone (optional): 7–15 digits only, no + or separators',
+    example: '15551234567',
+  })
   @IsOptional()
   @IsString()
-  @MaxLength(32)
+  @Matches(/^\d{7,15}$/, { message: PHONE_DIGITS_ONLY_MESSAGE })
   phone?: string;
 }
