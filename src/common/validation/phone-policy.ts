@@ -1,5 +1,8 @@
-/** E.164: leading +, country code, subscriber number (max 15 digits total). */
-export const E164_PHONE_PATTERN = /^\+[1-9]\d{1,14}$/;
+/**
+ * Subscriber number as digits only (no +, spaces, dashes, or letters).
+ * 7–15 digits covers typical international lengths without requiring a specific format.
+ */
+export const PHONE_DIGITS_ONLY_PATTERN = /^\d{7,15}$/;
 
-export const E164_PHONE_MESSAGE =
-  'phone must be E.164 format (e.g. +15551234567)';
+export const PHONE_DIGITS_ONLY_MESSAGE =
+  'phone must be 7–15 digits only (no +, spaces, or symbols)';
