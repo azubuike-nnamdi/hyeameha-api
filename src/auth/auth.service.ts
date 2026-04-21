@@ -7,11 +7,16 @@ import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { AuthResponseDto } from './dto/auth-response.dto';
+import {
+  AUTH_LOGIN_SUCCESS_MESSAGE,
+  AUTH_REGISTER_SUCCESS_MESSAGE,
+} from './auth.messages';
+import { RegisterResponseDto } from './dto/auth-response.dto';
+import { LoginResponseDto } from './dto/login-response.dto';
 import { toPublicUser } from '../users/types/public-user';
 
 /**
- * Registers and authenticates users for the Hyeameha API (JWT access + refresh tokens).
+ * Register issues access + refresh tokens; login issues access token only.
  */
 @Injectable()
 export class AuthService {
@@ -21,7 +26,7 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  async register(dto: RegisterDto): Promise<AuthResponseDto> {
+  async register(dto: RegisterDto): Promise<RegisterResponseDto> {
     const createUserDto: CreateUserDto = {
       email: dto.email,
       password: dto.password,
@@ -30,10 +35,10 @@ export class AuthService {
       phone: dto.phone,
     };
     const user: User = await this.usersService.create(createUserDto);
-    return this.buildAuthResponse(user.id, user.email, user);
+    return this.buildRegisterResponse(user.id, user.email, user);
   }
 
-  async login(dto: LoginDto): Promise<AuthResponseDto> {
+  async login(dto: LoginDto): Promise<LoginResponseDto> {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
@@ -42,19 +47,28 @@ export class AuthService {
     if (!valid) {
       throw new UnauthorizedException('Invalid email or password');
     }
-    return this.buildAuthResponse(user.id, user.email, user);
+    const accessToken = await this.signAccessToken(user.id, user.email);
+    return {
+      message: AUTH_LOGIN_SUCCESS_MESSAGE,
+      accessToken,
+      user: {
+        ...toPublicUser(user),
+        id: user.id,
+      },
+    };
   }
 
-  private async buildAuthResponse(
+  private async buildRegisterResponse(
     userId: string,
     email: string,
     user: User,
-  ): Promise<AuthResponseDto> {
+  ): Promise<RegisterResponseDto> {
     const accessToken = await this.signAccessToken(userId, email);
     const refreshToken = await this.signRefreshToken(userId, email);
     const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
     await this.usersService.setRefreshTokenHash(userId, refreshTokenHash);
     return {
+      message: AUTH_REGISTER_SUCCESS_MESSAGE,
       accessToken,
       refreshToken,
       user: {

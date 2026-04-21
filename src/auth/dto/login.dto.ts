@@ -6,7 +6,10 @@ export class LoginDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'a-secure-password' })
+  @ApiProperty({
+    example: 'a-secure-password',
+    description: 'Plain password (no refresh token in this request).',
+  })
   @IsString()
   @MinLength(1)
   @MaxLength(128)
