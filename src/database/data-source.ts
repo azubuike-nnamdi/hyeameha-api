@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
+import { Event } from '../events/entities/event.entity';
 import { User } from '../users/entities/user.entity';
 
 function requireEnv(name: string): string {
@@ -17,6 +18,6 @@ export default new DataSource({
   username: requireEnv('DATABASE_USER'),
   password: requireEnv('DATABASE_PASSWORD'),
   database: requireEnv('DATABASE_NAME'),
-  entities: [User],
+  entities: [User, Event],
   migrations: ['src/database/migrations/*.ts'],
 });
