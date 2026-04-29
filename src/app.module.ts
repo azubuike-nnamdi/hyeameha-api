@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { UsersModule } from './users/users.module';
+import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { HealthModule } from './health/health.module';
     HealthModule,
     UsersModule,
     AuthModule,
+    EventsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
