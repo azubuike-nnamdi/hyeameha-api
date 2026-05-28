@@ -3,7 +3,8 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
-import { JwtPayloadUser } from '../types/jwt-payload-user';
+import { toJwtPayloadUser } from '../mappers/jwt-payload-user.mapper';
+import type { JwtPayloadUser } from '../types/jwt-payload-user';
 
 type JwtPayload = {
   sub: string;
@@ -28,6 +29,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!user) {
       throw new UnauthorizedException();
     }
-    return { sub: user.id, email: user.email };
+    return toJwtPayloadUser(user);
   }
 }

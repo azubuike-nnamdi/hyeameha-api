@@ -91,6 +91,7 @@ export class UsersService {
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone,
+      role: user.role,
       deletedAt: user.deletedAt,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -126,7 +127,6 @@ export class UsersService {
    * row is permanently removed after the grace period by a scheduled job.
    */
   async requestAccountDeletion(userId: string): Promise<{
-    message: string;
     scheduledPermanentDeletionAt: Date;
     gracePeriodDays: number;
   }> {
@@ -147,8 +147,6 @@ export class UsersService {
     );
 
     return {
-      message:
-        'Your account is scheduled for permanent deletion. You will not be able to sign in. Your data is retained for 7 days; after that it will be permanently removed and cannot be recovered.',
       scheduledPermanentDeletionAt,
       gracePeriodDays: ACCOUNT_DELETION_GRACE_DAYS,
     };
@@ -178,6 +176,14 @@ export class UsersService {
 
     await this.usersRepository.update(userId, {
       passwordHash: await bcrypt.hash(newPassword, 10),
+    });
+  }
+
+  /** Password reset via OTP — invalidates existing refresh sessions. */
+  async resetPassword(userId: string, newPassword: string): Promise<void> {
+    await this.usersRepository.update(userId, {
+      passwordHash: await bcrypt.hash(newPassword, 10),
+      refreshTokenHash: null,
     });
   }
 
