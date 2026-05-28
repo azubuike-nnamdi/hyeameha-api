@@ -23,7 +23,7 @@ describe('UsersController', () => {
     controller = module.get<UsersController>(UsersController);
   });
 
-  const jwtUser = { sub: 'u1', email: 'a@b.com' };
+  const jwtUser = { sub: 'u1', email: 'a@b.com', role: 'user' as const };
 
   it('returns current user for me()', async () => {
     usersService.findProfileById.mockResolvedValue({
@@ -32,13 +32,17 @@ describe('UsersController', () => {
       lastName: 'B',
       email: 'a@b.com',
       phone: null,
+      role: 'user',
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
     const result = await controller.me(jwtUser);
-    expect(result.id).toBe('u1');
-    expect((result as { passwordHash?: string }).passwordHash).toBeUndefined();
+    expect(result.statusCode).toBe(200);
+    expect(result.data.id).toBe('u1');
+    expect(
+      (result.data as { passwordHash?: string }).passwordHash,
+    ).toBeUndefined();
   });
 
   it('throws when me() user missing', async () => {
@@ -56,6 +60,7 @@ describe('UsersController', () => {
         lastName: 'B',
         email: 'a@b.com',
         phone: null,
+        role: 'user',
         passwordHash: 'hidden',
         deletedAt: null,
         refreshTokenHash: null,
@@ -64,9 +69,9 @@ describe('UsersController', () => {
       },
     ]);
     const result = await controller.findAll();
-    expect(result).toHaveLength(1);
+    expect(result.data).toHaveLength(1);
     expect(
-      (result[0] as { passwordHash?: string }).passwordHash,
+      (result.data[0] as { passwordHash?: string }).passwordHash,
     ).toBeUndefined();
   });
 
@@ -77,12 +82,13 @@ describe('UsersController', () => {
       lastName: 'B',
       email: 'a@b.com',
       phone: null,
+      role: 'user',
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
     const result = await controller.update(jwtUser, { firstName: 'N' });
-    expect(result.firstName).toBe('N');
+    expect(result.data.firstName).toBe('N');
   });
 
   it('throws when update target not found', async () => {
@@ -94,7 +100,7 @@ describe('UsersController', () => {
 
   it('change password delegates to service', async () => {
     usersService.changePassword.mockResolvedValue(undefined);
-    await controller.changePassword(jwtUser, {
+    const result = await controller.changePassword(jwtUser, {
       currentPassword: 'old',
       newPassword: 'newpass12',
     });
@@ -103,16 +109,17 @@ describe('UsersController', () => {
       'old',
       'newpass12',
     );
+    expect(result.data).toBeNull();
+    expect(result.message).toBe('Password updated successfully');
   });
 
   it('requests account deletion for current user', async () => {
     usersService.requestAccountDeletion.mockResolvedValue({
-      message: 'ok',
       scheduledPermanentDeletionAt: new Date(),
       gracePeriodDays: 7,
     });
     const result = await controller.remove(jwtUser);
     expect(usersService.requestAccountDeletion).toHaveBeenCalledWith('u1');
-    expect(result.gracePeriodDays).toBe(7);
+    expect(result.data.gracePeriodDays).toBe(7);
   });
 });

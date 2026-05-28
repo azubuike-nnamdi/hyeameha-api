@@ -9,6 +9,7 @@ export function toUserResponseDto(user: User | UserPublic): UserResponseDto {
     lastName: user.lastName,
     email: user.email,
     phone: user.phone ?? null,
+    role: user.role,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

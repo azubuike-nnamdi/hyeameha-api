@@ -11,6 +11,7 @@ export function toEventResponseDto(event: Event): EventResponseDto {
     status: event.status,
     type: event.type,
     price: event.price,
+    source: 'local',
     createdAt: event.createdAt,
     updatedAt: event.updatedAt,
     updatedBy: event.updatedBy,

@@ -15,8 +15,7 @@ describe('Hyeameha API e2e', () => {
   let accessToken: string;
   const email = `e2e+${Date.now()}@example.com`;
 
-  interface AuthResponseBody {
-    message: string;
+  interface AuthSessionData {
     user: {
       id: string;
       email: string;
@@ -27,6 +26,12 @@ describe('Hyeameha API e2e', () => {
     };
     accessToken: string;
     refreshToken: string;
+  }
+
+  interface ApiEnvelope<T> {
+    statusCode: number;
+    message: string;
+    data: T;
   }
 
   beforeAll(async () => {
@@ -56,13 +61,24 @@ describe('Hyeameha API e2e', () => {
 
   it('GET /health should be public and return status', async () => {
     const res = await request(app.getHttpServer()).get('/health').expect(200);
-    const body = res.body as { status?: string; database?: string };
-    expect(body.status).toBe('ok');
-    expect(body.database).toBe('connected');
+    const body = res.body as ApiEnvelope<{
+      status?: string;
+      database?: string;
+    }>;
+    expect(body.statusCode).toBe(200);
+    expect(body.message).toBe('Service is healthy');
+    expect(body.data.status).toBe('ok');
+    expect(body.data.database).toBe('connected');
   });
 
   it('GET /api/v1/users/me should require auth', async () => {
-    await request(app.getHttpServer()).get('/api/v1/users/me').expect(401);
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/users/me')
+      .expect(401);
+    const body = res.body as ApiEnvelope<null>;
+    expect(body.statusCode).toBe(401);
+    expect(body.message).toBeDefined();
+    expect(body.data).toBeNull();
   });
 
   it('POST /api/v1/auth/register should issue access token and sanitized user', async () => {
@@ -78,17 +94,18 @@ describe('Hyeameha API e2e', () => {
       })
       .expect(201);
 
-    const body = res.body as AuthResponseBody;
+    const body = res.body as ApiEnvelope<AuthSessionData>;
+    expect(body.statusCode).toBe(201);
     expect(body.message).toBe('Registration successful');
-    expect(body.user.email).toBe(email);
-    expect(body.user.phone).toBe('15551234567');
-    expect(body.user.password).toBeUndefined();
-    expect(body.accessToken).toBeDefined();
-    expect(typeof body.accessToken).toBe('string');
-    expect(body.refreshToken).toBeDefined();
-    expect(typeof body.refreshToken).toBe('string');
+    expect(body.data.user.email).toBe(email);
+    expect(body.data.user.phone).toBe('15551234567');
+    expect(body.data.user.password).toBeUndefined();
+    expect(body.data.accessToken).toBeDefined();
+    expect(typeof body.data.accessToken).toBe('string');
+    expect(body.data.refreshToken).toBeDefined();
+    expect(typeof body.data.refreshToken).toBe('string');
 
-    accessToken = body.accessToken;
+    accessToken = body.data.accessToken;
   });
 
   it('POST /api/v1/auth/register should return 409 for duplicate email', async () => {
@@ -105,7 +122,7 @@ describe('Hyeameha API e2e', () => {
       })
       .expect(201);
 
-    await request(app.getHttpServer())
+    const res = await request(app.getHttpServer())
       .post('/api/v1/auth/register')
       .set('x-correlation-id', randomUUID())
       .send({
@@ -116,13 +133,66 @@ describe('Hyeameha API e2e', () => {
         phone: '15551234569',
       })
       .expect(409);
+
+    const body = res.body as ApiEnvelope<null>;
+    expect(body.statusCode).toBe(409);
+    expect(body.message).toBeDefined();
+    expect(body.data).toBeNull();
   });
 
   it('POST /api/v1/auth/login should return 401 for wrong password', async () => {
-    await request(app.getHttpServer())
+    const res = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
       .send({ email, password: 'wrong-password' })
       .expect(401);
+
+    const body = res.body as ApiEnvelope<null>;
+    expect(body.statusCode).toBe(401);
+    expect(body.message).toBe('Invalid email or password');
+    expect(body.data).toBeNull();
+  });
+
+  it('POST /api/v1/auth/login should issue access and refresh tokens', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email, password: PASSWORD })
+      .expect(200);
+
+    const body = res.body as ApiEnvelope<AuthSessionData>;
+    expect(body.statusCode).toBe(200);
+    expect(body.message).toBe('Login successful');
+    expect(body.data.accessToken).toBeDefined();
+    expect(body.data.refreshToken).toBeDefined();
+    expect(body.data.user.email).toBe(email);
+  });
+
+  it('POST /api/v1/auth/refresh should issue new access token', async () => {
+    const loginRes = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email, password: PASSWORD })
+      .expect(200);
+
+    const loginBody = loginRes.body as ApiEnvelope<AuthSessionData>;
+
+    const refreshRes = await request(app.getHttpServer())
+      .post('/api/v1/auth/refresh')
+      .send({ refreshToken: loginBody.data.refreshToken })
+      .expect(200);
+
+    const refreshBody = refreshRes.body as ApiEnvelope<{
+      accessToken: string;
+      refreshToken: string;
+    }>;
+    expect(refreshBody.statusCode).toBe(200);
+    expect(refreshBody.message).toBe('Tokens refreshed');
+    expect(refreshBody.data.accessToken).toBeDefined();
+    expect(refreshBody.data.refreshToken).toBeDefined();
+    expect(refreshBody.data.accessToken).not.toBe(loginBody.data.accessToken);
+
+    await request(app.getHttpServer())
+      .get('/api/v1/users/me')
+      .set('Authorization', `Bearer ${refreshBody.data.accessToken}`)
+      .expect(200);
   });
 
   it('GET /api/v1/users/me should return authenticated user (sanitized)', async () => {
@@ -131,14 +201,15 @@ describe('Hyeameha API e2e', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    const body = res.body as {
+    const body = res.body as ApiEnvelope<{
       email?: string;
       password?: string;
       refreshTokenHash?: string;
-    };
-    expect(body.email).toBe(email);
-    expect(body.password).toBeUndefined();
-    expect(body.refreshTokenHash).toBeUndefined();
+    }>;
+    expect(body.statusCode).toBe(200);
+    expect(body.data.email).toBe(email);
+    expect(body.data.password).toBeUndefined();
+    expect(body.data.refreshTokenHash).toBeUndefined();
   });
 
   it('PATCH /api/v1/users/me should update profile', async () => {
@@ -148,8 +219,12 @@ describe('Hyeameha API e2e', () => {
       .send({ firstName: 'Updated', lastName: 'Name' })
       .expect(200);
 
-    const body = res.body as { firstName?: string; lastName?: string };
-    expect(body.firstName).toBe('Updated');
-    expect(body.lastName).toBe('Name');
+    const body = res.body as ApiEnvelope<{
+      firstName?: string;
+      lastName?: string;
+    }>;
+    expect(body.statusCode).toBe(200);
+    expect(body.data.firstName).toBe('Updated');
+    expect(body.data.lastName).toBe('Name');
   });
 });

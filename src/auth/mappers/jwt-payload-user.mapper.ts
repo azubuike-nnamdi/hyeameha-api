@@ -1,0 +1,19 @@
+import type { UserRole } from '../../users/constants/user-role';
+import { DEFAULT_USER_ROLE } from '../../users/constants/user-role';
+import type { UserPublic } from '../../users/types/user-public';
+import type { JwtPayloadUser } from '../types/jwt-payload-user';
+
+function toUserRole(value: string): UserRole {
+  if (value === 'admin' || value === 'user') {
+    return value;
+  }
+  return DEFAULT_USER_ROLE;
+}
+
+export function toJwtPayloadUser(user: UserPublic): JwtPayloadUser {
+  return {
+    sub: user.id,
+    email: user.email,
+    role: toUserRole(user.role),
+  };
+}

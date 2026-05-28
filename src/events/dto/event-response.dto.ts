@@ -1,4 +1,33 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class PartnerEventTicketDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  quantity: number;
+
+  @ApiProperty()
+  maxPerTicket: number;
+
+  @ApiProperty()
+  stopSales: boolean;
+
+  @ApiProperty()
+  price: string;
+
+  @ApiProperty()
+  realPrice: string;
+
+  @ApiProperty()
+  fee: number;
+
+  @ApiProperty()
+  insuranceFee: string;
+}
 
 export class EventResponseDto {
   @ApiProperty()
@@ -25,6 +54,9 @@ export class EventResponseDto {
   @ApiProperty()
   price: string;
 
+  @ApiProperty({ enum: ['local', 'partner'] })
+  source: 'local' | 'partner';
+
   @ApiProperty()
   createdAt: Date;
 
@@ -33,4 +65,11 @@ export class EventResponseDto {
 
   @ApiProperty({ nullable: true })
   updatedBy: string | null;
+
+  @ApiPropertyOptional({
+    type: PartnerEventTicketDto,
+    isArray: true,
+    description: 'Ticket types (partner events only, on GET /events/:id)',
+  })
+  tickets?: PartnerEventTicketDto[];
 }

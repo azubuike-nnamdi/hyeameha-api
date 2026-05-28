@@ -1,50 +1,26 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateEventDto } from './dto/create-event.dto';
+import { EventResponseDto } from './dto/event-response.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Event } from './entities/event.entity';
-
-type EventSeedRow = Pick<
-  Event,
-  'title' | 'location' | 'image' | 'eventDate' | 'status' | 'type' | 'price'
->;
-
-const DEFAULT_EVENTS: EventSeedRow[] = [
-  {
-    title: 'Global Tech Expo 2026',
-    location: 'Convention Center, Accra',
-    image: 'https://placehold.co/800x400/1a1a2e/fff?text=Global+Tech+Expo+2026',
-    eventDate: '2026-01-24',
-    status: 'popular',
-    type: 'Technology',
-    price: '$50',
-  },
-  {
-    title: 'Vibrant Music Fest',
-    location: 'Black Star Square, Accra',
-    image: 'https://placehold.co/800x400/16213e/fff?text=Vibrant+Music+Fest',
-    eventDate: '2026-08-15',
-    status: 'ongoing',
-    type: 'Entertainment',
-    price: 'Free',
-  },
-  {
-    title: 'Innovation Summit',
-    location: 'Movenpick Hotel',
-    image: 'https://placehold.co/800x400/0f3460/fff?text=Innovation+Summit',
-    eventDate: '2026-02-10',
-    status: 'new',
-    type: 'Business',
-    price: '$100',
-  },
-];
+import { toEventResponseDto } from './mappers/event.mapper';
+import { toPartnerEventResponseDto } from './mappers/partner-event.mapper';
+import { PartnerEventsClient } from './partner/partner-events.client';
+import { isLocalEventId } from './utils/event-id.util';
 
 @Injectable()
 export class EventsService {
   constructor(
     @InjectRepository(Event)
     private readonly eventsRepository: Repository<Event>,
+    private readonly partnerEvents: PartnerEventsClient,
   ) {}
 
   async create(dto: CreateEventDto, userId: string): Promise<Event> {
@@ -55,18 +31,37 @@ export class EventsService {
     return this.eventsRepository.save(entity);
   }
 
-  async findAll(): Promise<Event[]> {
-    return this.eventsRepository.find({
-      order: { eventDate: 'ASC' },
-    });
+  async findAll(): Promise<EventResponseDto[]> {
+    const [localEvents, partnerEvents] = await Promise.all([
+      this.eventsRepository.find({ order: { eventDate: 'ASC' } }),
+      this.partnerEvents.listEvents(),
+    ]);
+
+    const local = localEvents.map(toEventResponseDto);
+    const partner = partnerEvents.map((event) =>
+      toPartnerEventResponseDto(event),
+    );
+    return [...local, ...partner];
   }
 
-  async findOne(id: string): Promise<Event> {
-    const event = await this.eventsRepository.findOne({ where: { id } });
-    if (!event) {
+  async findOne(id: string): Promise<EventResponseDto> {
+    if (isLocalEventId(id)) {
+      const event = await this.eventsRepository.findOne({ where: { id } });
+      if (!event) {
+        throw new NotFoundException('Event not found');
+      }
+      return toEventResponseDto(event);
+    }
+
+    try {
+      const partnerEvent = await this.partnerEvents.getEvent(id);
+      return toPartnerEventResponseDto(partnerEvent, { includeTickets: true });
+    } catch (error: unknown) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new NotFoundException('Event not found');
     }
-    return event;
   }
 
   async update(
@@ -74,30 +69,57 @@ export class EventsService {
     dto: UpdateEventDto,
     userId: string,
   ): Promise<Event> {
-    const event = await this.findOne(id);
+    this.assertLocalEventId(id);
+    const event = await this.findLocalEntity(id);
     Object.assign(event, dto, { updatedBy: userId });
     return this.eventsRepository.save(event);
   }
 
   async remove(id: string): Promise<void> {
+    this.assertLocalEventId(id);
     const result = await this.eventsRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException('Event not found');
     }
   }
 
-  /** Inserts the default catalog once in development when the table is empty. */
-  async seedDefaultsIfEmptyInDevelopment(): Promise<void> {
-    if (process.env.NODE_ENV !== 'development') {
-      return;
+  async calculateCharges(
+    id: string,
+    body: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    this.assertPartnerEventId(id);
+    return this.partnerEvents.calculateCharges(id, body);
+  }
+
+  async buyTicket(
+    id: string,
+    body: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    this.assertPartnerEventId(id);
+    return this.partnerEvents.buyTicket(id, body);
+  }
+
+  private assertLocalEventId(id: string): void {
+    if (!isLocalEventId(id)) {
+      throw new BadRequestException(
+        'Only locally managed events can be created, updated, or deleted',
+      );
     }
-    const count = await this.eventsRepository.count();
-    if (count > 0) {
-      return;
+  }
+
+  private assertPartnerEventId(id: string): void {
+    if (isLocalEventId(id)) {
+      throw new BadRequestException(
+        'Ticket booking is only available for partner events',
+      );
     }
-    const rows = DEFAULT_EVENTS.map((row) =>
-      this.eventsRepository.create({ ...row, updatedBy: null }),
-    );
-    await this.eventsRepository.save(rows);
+  }
+
+  private async findLocalEntity(id: string): Promise<Event> {
+    const event = await this.eventsRepository.findOne({ where: { id } });
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+    return event;
   }
 }

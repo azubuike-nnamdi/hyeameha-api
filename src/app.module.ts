@@ -8,12 +8,14 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { UsersModule } from './users/users.module';
 import { EventsModule } from './events/events.module';
 import { HealthModule } from './health/health.module';
+import { LoggingModule } from './logging/logging.module';
 
 @Module({
   imports: [
     AppConfigModule,
     ScheduleModule.forRoot(),
     DatabaseModule,
+    LoggingModule,
     HealthModule,
     UsersModule,
     AuthModule,

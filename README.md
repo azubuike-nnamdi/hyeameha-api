@@ -1,6 +1,6 @@
 # Hyeameha API
 
-Backend service for **Hyeameha**: a NestJS REST API with PostgreSQL, TypeORM, JWT authentication, and Swagger documentation. The codebase is intentionally **CRUD-focused** (users, auth, health)—no crawling or LLM ingestion pipeline.
+Backend service for **Hyeameha**: a NestJS REST API with PostgreSQL, TypeORM, JWT authentication, events (local catalog + eGotickets partner booking), and Swagger documentation. The codebase is intentionally **CRUD-focused**—no crawling or LLM ingestion pipeline.
 
 ## Documentation
 
@@ -19,7 +19,7 @@ Backend service for **Hyeameha**: a NestJS REST API with PostgreSQL, TypeORM, JW
 
 ```bash
 cp .env.example .env
-# Edit .env: set DATABASE_*, JWT_*, and other required secrets
+# Edit .env: set DATABASE_*, JWT_*, EVENT_* (eGotickets), and other required secrets
 
 pnpm install
 pnpm run docker:up          # PostgreSQL + Redis (Compose)
@@ -53,7 +53,7 @@ Configuration and secrets are **never** baked into the image; pass them via `.en
 
 ## Configuration
 
-Environment variables are validated at startup with **Joi** (`src/config/env.validation.ts`). Database connection uses **discrete** `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, and `DATABASE_NAME` (no `DATABASE_URL` in app code).
+Environment variables are validated at startup with **Joi** (`src/config/env.validation.ts`). Database connection uses **discrete** `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, and `DATABASE_NAME` (no `DATABASE_URL` in app code). Partner events require `EVENT_BASE_URL` and `EVENT_API_KEY` (see `.env.example`).
 
 ## License
 
