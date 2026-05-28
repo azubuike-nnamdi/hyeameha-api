@@ -1,4 +1,12 @@
-echo "husky(pre-push): nest build…"
-pnpm run build
-echo "husky(pre-push): unit tests…"
-pnpm run test
+#!/bin/sh
+
+echo "🔍 Running pre-push hook..."
+
+echo "🏗️ Running build..."
+pnpm run build || exit 1
+
+echo "🧪 Running unit tests..."
+pnpm run test || exit 1
+
+echo "✅ Pre-push checks passed."
+exit 0

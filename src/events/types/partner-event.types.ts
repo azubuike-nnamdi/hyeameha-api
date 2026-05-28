@@ -1,7 +1,3 @@
-export type PartnerEventBannerPhoto = {
-  url: string | null;
-};
-
 export type PartnerEventTicket = {
   id: number;
   name: string;
@@ -25,6 +21,6 @@ export type PartnerEvent = {
   friendly_price: string;
   startdate: string;
   enddate: string;
-  banner_photo?: PartnerEventBannerPhoto;
+  banner_photo?: { url: string | null };
   tickets?: PartnerEventTicket[];
 };

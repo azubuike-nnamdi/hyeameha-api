@@ -24,23 +24,3 @@ export class AuthResponseUserDto {
   @ApiProperty({ enum: ['user', 'admin'], example: 'user' })
   role: string;
 }
-
-/** Response for `POST /auth/register` — includes refresh token. */
-export class RegisterResponseDto {
-  @ApiProperty({
-    example: 'Registration successful',
-    description: 'Human-readable success message',
-  })
-  message: string;
-
-  @ApiProperty({ description: 'JWT access token (use as Bearer token)' })
-  accessToken: string;
-
-  @ApiProperty({
-    description: 'JWT refresh token (store securely for future refresh flows)',
-  })
-  refreshToken: string;
-
-  @ApiProperty({ type: AuthResponseUserDto })
-  user: AuthResponseUserDto;
-}
