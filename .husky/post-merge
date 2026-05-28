@@ -1,6 +1,13 @@
+#!/bin/sh
+
+echo "🔍 Running post-merge hook..."
+
 if git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD 2>/dev/null | grep -qE '(^|/)pnpm-lock\.yaml$'; then
-  echo "husky(post-merge): pnpm-lock.yaml changed — pnpm install…"
-  pnpm install
+  echo "📦 pnpm-lock.yaml changed — running pnpm install..."
+  pnpm install || exit 1
+  echo "✅ Dependencies updated."
 else
-  echo "husky(post-merge): lockfile unchanged — skip install"
+  echo "✅ Lockfile unchanged — skip install."
 fi
+
+exit 0

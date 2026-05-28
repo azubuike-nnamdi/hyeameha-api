@@ -162,4 +162,4 @@ Tags are set via `@ApiFailureTag()` on controllers/handlers, or inferred from th
 
 ## Linting and TypeScript
 
-ESLint uses **type-aware** rules with `parserOptions.project` pointing at `tsconfig.json`. The repo sets `lib` / `include` explicitly so TypeORM and test helpers resolve cleanly; keep `test/` typings (e.g. `@types/superagent` for e2e helpers) in sync when adding imports.
+ESLint uses **type-aware** rules with `parserOptions.project` pointing at `tsconfig.json`. The repo sets `lib` / `include` explicitly so TypeORM and test helpers resolve cleanly; keep `test/` typings (e.g. `@types/supertest` for e2e) in sync when adding imports.
