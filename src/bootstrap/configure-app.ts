@@ -7,18 +7,45 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import {
-  AuthResponseUserDto,
-  RegisterResponseDto,
-} from '../auth/dto/auth-response.dto';
-import { LoginResponseDto } from '../auth/dto/login-response.dto';
+  AuthLoginApiResponseDto,
+  AuthMessageApiResponseDto,
+  AuthRefreshApiResponseDto,
+  AuthRegisterApiResponseDto,
+} from '../auth/dto/auth-api-response.dto';
+import { AuthResponseUserDto } from '../auth/dto/auth-response.dto';
 import { LoginDto } from '../auth/dto/login.dto';
+import { ForgotPasswordDto } from '../auth/dto/forgot-password.dto';
+import { RefreshTokenDto } from '../auth/dto/refresh-token.dto';
+import { ResetPasswordDto } from '../auth/dto/reset-password.dto';
 import { RegisterDto } from '../auth/dto/register.dto';
+import { ApiMessageResponseDto } from '../common/dto/api-data-response.dto';
 import { CreateEventDto } from '../events/dto/create-event.dto';
-import { EventResponseDto } from '../events/dto/event-response.dto';
+import {
+  EventApiResponseDto,
+  EventDeleteApiResponseDto,
+  EventListApiResponseDto,
+} from '../events/dto/events-api-response.dto';
+import {
+  EventResponseDto,
+  PartnerEventTicketDto,
+} from '../events/dto/event-response.dto';
 import { UpdateEventDto } from '../events/dto/update-event.dto';
+import { HealthApiResponseDto } from '../health/dto/health-api-response.dto';
+import {
+  AccountDeletionApiResponseDto,
+  UserApiResponseDto,
+  UserListApiResponseDto,
+} from '../users/dto/users-api-response.dto';
+import { UserResponseDto } from '../users/dto/user-response.dto';
 
 export function configureApp(app: INestApplication): void {
   const config = app.get(ConfigService);
+
+  // Honor X-Forwarded-For / X-Real-IP for login notification emails
+  const httpAdapter = app.getHttpAdapter().getInstance() as {
+    set?: (key: string, value: boolean) => void;
+  };
+  httpAdapter.set?.('trust proxy', true);
 
   const isProd = config.get<string>('NODE_ENV') === 'production';
   // Strict CSP breaks Swagger UI in many browsers; keep full helmet defaults in production only.
@@ -60,10 +87,33 @@ export function configureApp(app: INestApplication): void {
       [
         'REST API for web and mobile clients.',
         '',
-        '- **Base path:** `/api/v1` for versioned routes; `/health` and `/docs` are at the root.',
-        '- **Auth:** `POST /api/v1/auth/register` (`phone`: 7–15 digits only; returns `message`, `refreshToken`, tokens, `user`). `POST /api/v1/auth/login` returns `message`, `accessToken`, and `user` (no refresh token).',
-        '- **Protected routes:** send header `Authorization: Bearer <accessToken>`.',
-        '- **Events:** `GET|POST /api/v1/events`, `GET|PATCH|DELETE /api/v1/events/:id` (Bearer required). `eventDate` is `YYYY-MM-DD`; `status` is `popular`, `ongoing`, or `new`.',
+        '### Base URL',
+        '- Versioned routes: `/api/v1`',
+        '- Public: `/health`, `/docs`, `/docs-json`',
+        '',
+        '### Response format',
+        '- Success: `{ statusCode, message, data }`',
+        '- Error: `{ statusCode, message, data }` (`data` is `null`, or `{ errors: string[] }` for validation failures)',
+        '',
+        '### Authentication',
+        '- Protected routes: `Authorization: Bearer <accessToken>`',
+        '- Register: `POST /api/v1/auth/register` — welcome email; tokens and `user` in `data`',
+        '- Login: `POST /api/v1/auth/login` — login alert email (IP / device); tokens and `user` in `data`',
+        '- Refresh: `POST /api/v1/auth/refresh` — body `{ refreshToken }`; new tokens in `data`',
+        '- Forgot password: `POST /api/v1/auth/forgot-password` — body `{ email }`; sends OTP email',
+        '- Reset password: `POST /api/v1/auth/reset-password` — body `{ email, otp, newPassword }`',
+        '- Failed API responses (HTTP ≥ 400) are logged to PostgreSQL table `api_failure_logs` with searchable `tag` (`login`, `register`, `events`, …)',
+        '- `user.role`: `user` (default) or `admin` (set in DB; required for event CRUD)',
+        '',
+        '### Events',
+        '- `GET /api/v1/events` — local events (`source: local`) + eGotickets partner events (`source: partner`)',
+        '- `GET /api/v1/events/:id` — UUID (local) or numeric id (partner); partner detail includes `tickets`',
+        '- `POST|PATCH|DELETE /api/v1/events` — **admin only**; local UUID events only',
+        '- `POST /api/v1/events/:id/calculate_charges` — proxy to eGotickets (partner id; body forwarded)',
+        '- `POST /api/v1/events/:id/buy_ticket` — proxy to eGotickets (partner id; body forwarded)',
+        '- Local create/update: `eventDate` `YYYY-MM-DD`; `status` one of `popular`, `ongoing`, `new`',
+        '',
+        'Full reference: [docs/README.md](../docs/README.md)',
       ].join('\n'),
     )
     .setVersion('1.0')
@@ -76,9 +126,15 @@ export function configureApp(app: INestApplication): void {
       },
       'access-token',
     )
-    .addTag('auth', 'Registration and login')
+    .addTag(
+      'auth',
+      'Registration, login, refresh, password reset, and email notifications',
+    )
     .addTag('users', 'Current user profile (Bearer auth)')
-    .addTag('events', 'Events (Bearer auth)')
+    .addTag(
+      'events',
+      'Local events (admin CRUD) and eGotickets partner events (read + book)',
+    )
     .addTag('health', 'Liveness and DB check')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig, {
@@ -86,12 +142,27 @@ export function configureApp(app: INestApplication): void {
     extraModels: [
       RegisterDto,
       LoginDto,
-      RegisterResponseDto,
-      LoginResponseDto,
+      AuthRegisterApiResponseDto,
+      AuthLoginApiResponseDto,
+      RefreshTokenDto,
+      AuthRefreshApiResponseDto,
+      ForgotPasswordDto,
+      ResetPasswordDto,
+      AuthMessageApiResponseDto,
       AuthResponseUserDto,
+      ApiMessageResponseDto,
+      UserResponseDto,
+      UserApiResponseDto,
+      UserListApiResponseDto,
+      AccountDeletionApiResponseDto,
+      HealthApiResponseDto,
       CreateEventDto,
       UpdateEventDto,
       EventResponseDto,
+      PartnerEventTicketDto,
+      EventListApiResponseDto,
+      EventApiResponseDto,
+      EventDeleteApiResponseDto,
     ],
   });
   SwaggerModule.setup('docs', app, document, {

@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { DEFAULT_USER_ROLE, type UserRole } from '../constants/user-role';
 
 @Entity('users')
 export class User {
@@ -25,6 +26,9 @@ export class User {
 
   @Column({ type: 'varchar', nullable: true })
   phone: string | null;
+
+  @Column({ type: 'varchar', length: 16, default: DEFAULT_USER_ROLE })
+  role: UserRole;
 
   @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt: Date | null;

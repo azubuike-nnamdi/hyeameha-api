@@ -24,4 +24,15 @@ Object.assign(process.env, {
   THROTTLE_AUTH_LIMIT: process.env.THROTTLE_AUTH_LIMIT ?? '5',
   THROTTLE_DEFAULT_TTL: process.env.THROTTLE_DEFAULT_TTL ?? '60',
   THROTTLE_DEFAULT_LIMIT: process.env.THROTTLE_DEFAULT_LIMIT ?? '100',
+  EVENT_BASE_URL: process.env.EVENT_BASE_URL ?? 'https://egotickets.com',
+  EVENT_API_KEY: process.env.EVENT_API_KEY ?? 'e2e-test-partner-api-key',
+  MAIL_ENABLED: process.env.MAIL_ENABLED ?? 'false',
+  ALTER_MAIL_KEY: process.env.ALTER_MAIL_KEY ?? 'e2e-test-altermail-key',
+  ALTERMAIL_API_URL:
+    process.env.ALTERMAIL_API_URL ??
+    'https://api.altermail-console.com.ng/v1/user/email/send',
+  MAIL_FROM: process.env.MAIL_FROM ?? 'noreply@hyeameha.com',
+  PASSWORD_RESET_OTP_EXPIRES_MINUTES:
+    process.env.PASSWORD_RESET_OTP_EXPIRES_MINUTES ?? '15',
+  PASSWORD_RESET_OTP_LENGTH: process.env.PASSWORD_RESET_OTP_LENGTH ?? '6',
 });
