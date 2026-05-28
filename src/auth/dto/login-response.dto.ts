@@ -1,10 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { AuthResponseUserDto } from './auth-response.dto';
 
-/**
- * Response for `POST /auth/login`.
- * Body is only `{ email, password }`. No refresh token in request or response.
- */
+/** Response for `POST /auth/login`. */
 export class LoginResponseDto {
   @ApiProperty({
     example: 'Login successful',
@@ -14,6 +11,12 @@ export class LoginResponseDto {
 
   @ApiProperty({ description: 'JWT access token (use as Bearer token)' })
   accessToken: string;
+
+  @ApiProperty({
+    description:
+      'JWT refresh token (store securely; hash persisted server-side)',
+  })
+  refreshToken: string;
 
   @ApiProperty({ type: AuthResponseUserDto })
   user: AuthResponseUserDto;
