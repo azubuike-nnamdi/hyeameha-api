@@ -69,7 +69,7 @@ E2E tests need a reachable PostgreSQL instance and valid `DATABASE_*` (and relat
 - **User-facing API details:** `docs/README.md`
 - **Project overview and scripts:** `README.md`
 
-Update these when you change env vars, Docker layout, or major behavior.
+Update these when you change env vars, Docker layout, API routes, or major behavior (including Swagger text in `src/bootstrap/configure-app.ts`).
 
 ## Code of conduct
 
