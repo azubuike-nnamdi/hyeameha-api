@@ -20,6 +20,9 @@ export class AuthResponseUserDto {
     description: 'Digits only; set at registration / profile update',
   })
   phone: string | null;
+
+  @ApiProperty({ enum: ['user', 'admin'], example: 'user' })
+  role: string;
 }
 
 /** Response for `POST /auth/register` — includes refresh token. */
@@ -34,8 +37,7 @@ export class RegisterResponseDto {
   accessToken: string;
 
   @ApiProperty({
-    description:
-      'JWT refresh token (register only; store securely for future refresh flows)',
+    description: 'JWT refresh token (store securely for future refresh flows)',
   })
   refreshToken: string;
 
