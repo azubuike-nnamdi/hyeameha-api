@@ -35,4 +35,19 @@ export const envValidationSchema = Joi.object({
   THROTTLE_AUTH_LIMIT: Joi.number().integer().positive().default(5),
   THROTTLE_DEFAULT_TTL: Joi.number().integer().positive().default(60),
   THROTTLE_DEFAULT_LIMIT: Joi.number().integer().positive().default(100),
+
+  EVENT_BASE_URL: Joi.string().uri().required(),
+  EVENT_API_KEY: Joi.string().min(1).required(),
+
+  MAIL_ENABLED: Joi.string().valid('true', 'false').default('true'),
+  ALTER_MAIL_KEY: Joi.string().min(1).required(),
+  ALTERMAIL_API_URL: Joi.string()
+    .uri()
+    .default('https://api.altermail-console.com.ng/v1/user/email/send'),
+  MAIL_FROM: Joi.string().email().required(),
+  PASSWORD_RESET_OTP_EXPIRES_MINUTES: Joi.number()
+    .integer()
+    .positive()
+    .default(15),
+  PASSWORD_RESET_OTP_LENGTH: Joi.number().integer().min(4).max(8).default(6),
 });

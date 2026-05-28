@@ -1,3 +1,22 @@
 {
-  "cSpell.words": ["bullmq", "healthcheck", "Hyea", "hyeameha"]
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "cSpell.words": [
+    "Altermail",
+    "bullmq",
+    "enddate",
+    "Gotickets",
+    "healthcheck",
+    "Hyea",
+    "hyeameha",
+    "otps",
+    "startdate",
+    "trixie"
+  ]
 }

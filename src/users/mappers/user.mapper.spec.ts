@@ -8,6 +8,7 @@ describe('toUserResponseDto', () => {
       lastName: 'B',
       email: 'a@b.com',
       phone: null,
+      role: 'user' as const,
       deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),

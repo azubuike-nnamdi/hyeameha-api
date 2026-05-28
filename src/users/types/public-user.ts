@@ -1,3 +1,4 @@
+import type { UserRole } from '../constants/user-role';
 import type { User } from '../entities/user.entity';
 
 export type PublicUser = {
@@ -6,6 +7,7 @@ export type PublicUser = {
   firstName: string;
   lastName: string;
   phone: string | null;
+  role: UserRole;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -17,6 +19,7 @@ export function toPublicUser(user: User): PublicUser {
     firstName: user.firstName,
     lastName: user.lastName,
     phone: user.phone,
+    role: user.role,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

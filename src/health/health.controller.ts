@@ -1,7 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
-import { Public } from '../common';
+import { Public, apiResponse } from '../common';
+import { HealthApiResponseDto } from './dto/health-api-response.dto';
+import { HEALTH_CHECK_SUCCESS_MESSAGE } from './health.messages';
 
 @ApiTags('health')
 @Controller('health')
@@ -13,20 +15,14 @@ export class HealthController {
   @ApiOperation({
     summary: 'Liveness and database connectivity',
     description:
-      'Public. Returns `{ status: "ok", database: "connected" }` when Postgres is reachable.',
+      'Public. Returns service and database status in `data` when Postgres is reachable.',
   })
-  @ApiOkResponse({
-    description: 'Service is up and database query succeeded',
-    schema: {
-      example: { status: 'ok', database: 'connected' },
-      properties: {
-        status: { type: 'string', example: 'ok' },
-        database: { type: 'string', example: 'connected' },
-      },
-    },
-  })
-  async check(): Promise<{ status: string; database: string }> {
+  @ApiOkResponse({ type: HealthApiResponseDto })
+  async check() {
     await this.dataSource.query('SELECT 1');
-    return { status: 'ok', database: 'connected' };
+    return apiResponse(
+      { status: 'ok', database: 'connected' },
+      HEALTH_CHECK_SUCCESS_MESSAGE,
+    );
   }
 }

@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
+import { PasswordResetOtp } from '../auth/entities/password-reset-otp.entity';
 import { Event } from '../events/entities/event.entity';
+import { ApiFailureLog } from '../logging/entities/api-failure-log.entity';
 import { User } from '../users/entities/user.entity';
 
 function requireEnv(name: string): string {
@@ -11,6 +13,9 @@ function requireEnv(name: string): string {
   return v;
 }
 
+/** CLI-only: skip entity metadata when running migrations (faster ts-node startup). */
+const migrationsOnly = process.env.TYPEORM_MIGRATIONS_ONLY === '1';
+
 export default new DataSource({
   type: 'postgres',
   host: requireEnv('DATABASE_HOST'),
@@ -18,6 +23,11 @@ export default new DataSource({
   username: requireEnv('DATABASE_USER'),
   password: requireEnv('DATABASE_PASSWORD'),
   database: requireEnv('DATABASE_NAME'),
-  entities: [User, Event],
+  entities: migrationsOnly
+    ? []
+    : [User, Event, PasswordResetOtp, ApiFailureLog],
   migrations: ['src/database/migrations/*.ts'],
+  extra: {
+    connectionTimeoutMillis: 10_000,
+  },
 });
