@@ -3,6 +3,9 @@ import { DataSource } from 'typeorm';
 import { PasswordResetOtp } from '../auth/entities/password-reset-otp.entity';
 import { Event } from '../events/entities/event.entity';
 import { ApiFailureLog } from '../logging/entities/api-failure-log.entity';
+import { AccommodationBooking } from '../accommodation/entities/accommodation-booking.entity';
+import { AccommodationBudget } from '../accommodation/entities/accommodation-budget.entity';
+import { Training } from '../training/entities/training.entity';
 import { User } from '../users/entities/user.entity';
 
 function requireEnv(name: string): string {
@@ -25,7 +28,15 @@ export default new DataSource({
   database: requireEnv('DATABASE_NAME'),
   entities: migrationsOnly
     ? []
-    : [User, Event, PasswordResetOtp, ApiFailureLog],
+    : [
+        User,
+        Event,
+        Training,
+        AccommodationBudget,
+        AccommodationBooking,
+        PasswordResetOtp,
+        ApiFailureLog,
+      ],
   migrations: ['src/database/migrations/*.ts'],
   extra: {
     connectionTimeoutMillis: 10_000,
