@@ -8,6 +8,10 @@ export class ApiMessageResponseDto {
   @ApiProperty({ example: 'Request completed successfully' })
   message: string;
 
-  @ApiProperty({ nullable: true, example: null })
+  @ApiProperty({
+    nullable: true,
+    example: null,
+    type: Object,
+  })
   data: null;
 }
