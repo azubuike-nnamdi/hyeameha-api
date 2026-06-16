@@ -10,4 +10,9 @@ async function bootstrap() {
   const port = config.getOrThrow<number>('PORT');
   await app.listen(port);
 }
-void bootstrap();
+bootstrap().catch((error: unknown) => {
+  const message =
+    error instanceof Error ? (error.stack ?? error.message) : String(error);
+  console.error(`Failed to start application: ${message}`);
+  process.exit(1);
+});
