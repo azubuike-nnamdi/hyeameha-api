@@ -21,6 +21,9 @@ export class AuthResponseUserDto {
   })
   phone: string | null;
 
-  @ApiProperty({ enum: ['user', 'admin'], example: 'user' })
+  @ApiProperty({
+    enum: ['user', 'editor', 'admin', 'super_admin'],
+    example: 'user',
+  })
   role: string;
 }
