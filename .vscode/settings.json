@@ -17,6 +17,7 @@
     "knip",
     "otps",
     "startdate",
+    "timestamptz",
     "trixie"
   ]
 }
