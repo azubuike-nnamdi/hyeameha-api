@@ -30,6 +30,28 @@ import {
   PartnerEventTicketDto,
 } from '../events/dto/event-response.dto';
 import { UpdateEventDto } from '../events/dto/update-event.dto';
+import { CreateTrainingDto } from '../training/dto/create-training.dto';
+import {
+  TrainingApiResponseDto,
+  TrainingDeleteApiResponseDto,
+  TrainingListApiResponseDto,
+} from '../training/dto/trainings-api-response.dto';
+import { TrainingResponseDto } from '../training/dto/training-response.dto';
+import { UpdateTrainingDto } from '../training/dto/update-training.dto';
+import { CreateAccommodationBudgetDto } from '../accommodation/dto/create-accommodation-budget.dto';
+import { UpdateAccommodationBudgetDto } from '../accommodation/dto/update-accommodation-budget.dto';
+import { AccommodationBudgetResponseDto } from '../accommodation/dto/accommodation-budget-response.dto';
+import {
+  AccommodationBudgetApiResponseDto,
+  AccommodationBudgetDeleteApiResponseDto,
+  AccommodationBudgetListApiResponseDto,
+} from '../accommodation/dto/accommodation-budgets-api-response.dto';
+import { CreateAccommodationBookingDto } from '../accommodation/dto/create-accommodation-booking.dto';
+import { AccommodationBookingResponseDto } from '../accommodation/dto/accommodation-booking-response.dto';
+import {
+  AccommodationBookingApiResponseDto,
+  AccommodationBookingListApiResponseDto,
+} from '../accommodation/dto/accommodation-bookings-api-response.dto';
 import { HealthApiResponseDto } from '../health/dto/health-api-response.dto';
 import {
   AccountDeletionApiResponseDto,
@@ -103,7 +125,7 @@ export function configureApp(app: INestApplication): void {
         '- Forgot password: `POST /api/v1/auth/forgot-password` — body `{ email }`; sends OTP email',
         '- Reset password: `POST /api/v1/auth/reset-password` — body `{ email, otp, newPassword }`',
         '- Failed API responses (HTTP ≥ 400) are logged to PostgreSQL table `api_failure_logs` with searchable `tag` (`login`, `register`, `events`, …)',
-        '- `user.role`: `user` (default) or `admin` (set in DB; required for event CRUD)',
+        '- `user.role`: `user` (default), `editor`, `admin`, or `super_admin` (set in DB)',
         '',
         '### Events',
         '- `GET /api/v1/events` — local events (`source: local`) + eGotickets partner events (`source: partner`)',
@@ -112,6 +134,24 @@ export function configureApp(app: INestApplication): void {
         '- `POST /api/v1/events/:id/calculate_charges` — proxy to eGotickets (partner id; body forwarded)',
         '- `POST /api/v1/events/:id/buy_ticket` — proxy to eGotickets (partner id; body forwarded)',
         '- Local create/update: `eventDate` `YYYY-MM-DD`; `status` one of `popular`, `ongoing`, `new`',
+        '',
+        '### Trainings',
+        '- `GET /api/v1/trainings` — list training programmes (all authenticated users)',
+        '- `GET /api/v1/trainings/:id` — get one programme (all authenticated users)',
+        '- `POST|PATCH|DELETE /api/v1/trainings` — **super_admin, admin, or editor only**',
+        '- Body fields: `title`, `location`, `startTime`, `endTime`, `duration`, `topics` (string array)',
+        '',
+        '### Accommodation budgets',
+        '- `GET /api/v1/accommodation/budgets` — list budget tiers (all authenticated users)',
+        '- `GET /api/v1/accommodation/budgets/:id` — get one tier (all authenticated users)',
+        '- `POST|PATCH|DELETE /api/v1/accommodation/budgets` — **super_admin or admin only**',
+        '',
+        '### Accommodation bookings',
+        '- `POST /api/v1/accommodation/bookings` — book accommodation (all authenticated users)',
+        '- `GET /api/v1/accommodation/bookings` — users see own bookings; admins see all',
+        '- `GET /api/v1/accommodation/bookings/:id` — users see own booking; admins see any',
+        '- When `isBookingForSelf` is false, `guestFirstName`, `guestLastName`, `guestEmail`, and `guestPhone` are required',
+        '- `bookedByUserId` is always captured from the access token',
         '',
         'Full reference: [docs/README.md](../docs/README.md)',
       ].join('\n'),
@@ -134,6 +174,18 @@ export function configureApp(app: INestApplication): void {
     .addTag(
       'events',
       'Local events (admin CRUD) and eGotickets partner events (read + book)',
+    )
+    .addTag(
+      'trainings',
+      'Training programmes (read for all users; CRUD for super_admin, admin, editor)',
+    )
+    .addTag(
+      'accommodation-budgets',
+      'Accommodation budget tiers (read for all; manage for super_admin, admin)',
+    )
+    .addTag(
+      'accommodation-bookings',
+      'Accommodation bookings (users book; admins view all)',
     )
     .addTag('health', 'Liveness and DB check')
     .build();
@@ -163,6 +215,22 @@ export function configureApp(app: INestApplication): void {
       EventListApiResponseDto,
       EventApiResponseDto,
       EventDeleteApiResponseDto,
+      CreateTrainingDto,
+      UpdateTrainingDto,
+      TrainingResponseDto,
+      TrainingListApiResponseDto,
+      TrainingApiResponseDto,
+      TrainingDeleteApiResponseDto,
+      CreateAccommodationBudgetDto,
+      UpdateAccommodationBudgetDto,
+      AccommodationBudgetResponseDto,
+      AccommodationBudgetListApiResponseDto,
+      AccommodationBudgetApiResponseDto,
+      AccommodationBudgetDeleteApiResponseDto,
+      CreateAccommodationBookingDto,
+      AccommodationBookingResponseDto,
+      AccommodationBookingListApiResponseDto,
+      AccommodationBookingApiResponseDto,
     ],
   });
   SwaggerModule.setup('docs', app, document, {
