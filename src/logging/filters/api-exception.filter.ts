@@ -57,11 +57,21 @@ export class ApiExceptionFilter implements ExceptionFilter {
       normalizeApiErrorResponse(status, responseBody);
 
     if (status >= 400 && !shouldSkipApiFailureLog(request.url)) {
-      const executionContext = host as ExecutionContext;
-      const explicitTag = this.reflector.getAllAndOverride<string>(
-        API_FAILURE_TAG_KEY,
-        [executionContext.getHandler(), executionContext.getClass()],
-      );
+      let explicitTag: string | undefined;
+      if ('getHandler' in host && 'getClass' in host) {
+        const executionContext = host as ExecutionContext;
+        const handler = executionContext.getHandler();
+        const controllerClass = executionContext.getClass();
+        if (
+          typeof handler === 'function' &&
+          typeof controllerClass === 'function'
+        ) {
+          explicitTag = this.reflector.getAllAndOverride<string>(
+            API_FAILURE_TAG_KEY,
+            [handler, controllerClass],
+          );
+        }
+      }
       const correlationId =
         (typeof request.headers[CORRELATION_ID_HEADER] === 'string'
           ? request.headers[CORRELATION_ID_HEADER]

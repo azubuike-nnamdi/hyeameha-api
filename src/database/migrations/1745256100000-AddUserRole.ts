@@ -6,7 +6,7 @@ export class AddUserRole1745256100000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       ALTER TABLE "users"
-      ADD COLUMN "role" character varying(16) NOT NULL DEFAULT 'user'
+      ADD COLUMN IF NOT EXISTS "role" character varying(16) NOT NULL DEFAULT 'user'
     `);
   }
 

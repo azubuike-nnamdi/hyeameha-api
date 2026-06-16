@@ -30,6 +30,6 @@ export class EventDeleteApiResponseDto {
   @ApiProperty({ example: 'Event deleted successfully' })
   message: string;
 
-  @ApiProperty({ nullable: true, example: null })
+  @ApiProperty({ nullable: true, example: null, type: Object })
   data: null;
 }

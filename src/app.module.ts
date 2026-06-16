@@ -7,6 +7,8 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { UsersModule } from './users/users.module';
 import { EventsModule } from './events/events.module';
+import { TrainingModule } from './training/training.module';
+import { AccommodationModule } from './accommodation/accommodation.module';
 import { HealthModule } from './health/health.module';
 import { LoggingModule } from './logging/logging.module';
 
@@ -20,6 +22,8 @@ import { LoggingModule } from './logging/logging.module';
     UsersModule,
     AuthModule,
     EventsModule,
+    TrainingModule,
+    AccommodationModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })

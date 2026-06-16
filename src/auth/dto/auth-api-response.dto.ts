@@ -68,6 +68,6 @@ export class AuthMessageApiResponseDto {
   })
   message: string;
 
-  @ApiProperty({ nullable: true, example: null })
+  @ApiProperty({ nullable: true, example: null, type: Object })
   data: null;
 }

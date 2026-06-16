@@ -19,7 +19,10 @@ export class UserResponseDto {
   @ApiProperty({ example: '15551234567', nullable: true })
   phone: string | null;
 
-  @ApiProperty({ enum: ['user', 'admin'], example: 'user' })
+  @ApiProperty({
+    enum: ['user', 'editor', 'admin', 'super_admin'],
+    example: 'user',
+  })
   role: string;
 
   @ApiProperty()
