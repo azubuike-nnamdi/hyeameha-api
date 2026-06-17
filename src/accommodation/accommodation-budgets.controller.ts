@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -19,6 +20,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -46,6 +48,7 @@ import {
 import { CreateAccommodationBudgetDto } from './dto/create-accommodation-budget.dto';
 import { UpdateAccommodationBudgetDto } from './dto/update-accommodation-budget.dto';
 import { toAccommodationBudgetResponseDto } from './mappers/accommodation-budget.mapper';
+import { ACCOMMODATION_TYPES } from './constants/accommodation-type';
 
 @ApiTags('accommodation-budgets')
 @ApiFailureTag('accommodation-budgets')
@@ -86,11 +89,20 @@ export class AccommodationBudgetsController {
   @Get()
   @ApiOperation({
     summary: 'List accommodation budget tiers',
-    description: 'Available to all authenticated users.',
+    description:
+      'Available to all authenticated users. Each accommodation type may have multiple tiers (Standard, Premium, etc.) or a single fixed price.',
+  })
+  @ApiQuery({
+    name: 'accommodationType',
+    required: false,
+    enum: ACCOMMODATION_TYPES,
+    description: 'Filter budgets to a single accommodation type.',
   })
   @ApiOkResponse({ type: AccommodationBudgetListApiResponseDto })
-  async findAll() {
-    const budgets = await this.budgetsService.findAll();
+  async findAll(@Query('accommodationType') accommodationType?: string) {
+    const budgets = await this.budgetsService.findAll(
+      accommodationType as (typeof ACCOMMODATION_TYPES)[number] | undefined,
+    );
     return apiResponse(
       budgets.map(toAccommodationBudgetResponseDto),
       ACCOMMODATION_BUDGETS_LIST_SUCCESS_MESSAGE,

@@ -3,10 +3,7 @@ import dataSource from './data-source';
 import { Event } from '../events/entities/event.entity';
 import { AccommodationBudget } from '../accommodation/entities/accommodation-budget.entity';
 import { Training } from '../training/entities/training.entity';
-import {
-  DEFAULT_ACCOMMODATION_BUDGETS,
-  DEFAULT_ACCOMMODATION_BUDGET_NAMES,
-} from './seeds/accommodation-budgets.seed';
+import { DEFAULT_ACCOMMODATION_BUDGETS } from './seeds/accommodation-budgets.seed';
 import { DEFAULT_EVENTS, DEFAULT_EVENT_TITLES } from './seeds/events.seed';
 import {
   DEFAULT_TRAININGS,
@@ -81,14 +78,12 @@ async function seedAccommodationBudgets(force: boolean): Promise<void> {
   }
 
   if (force && count > 0) {
-    await repo
-      .createQueryBuilder()
-      .delete()
-      .from(AccommodationBudget)
-      .where('name IN (:...names)', {
-        names: DEFAULT_ACCOMMODATION_BUDGET_NAMES,
-      })
-      .execute();
+    for (const row of DEFAULT_ACCOMMODATION_BUDGETS) {
+      await repo.delete({
+        accommodationType: row.accommodationType,
+        name: row.name,
+      });
+    }
     console.log('Removed previous default seed accommodation budgets.');
   }
 
@@ -96,7 +91,7 @@ async function seedAccommodationBudgets(force: boolean): Promise<void> {
     repo.create({ ...row, updatedBy: null }),
   );
   await repo.save(rows);
-  console.log(`Seeded ${rows.length} accommodation budget tier(s).`);
+  console.log(`Seeded ${rows.length} accommodation budget(s).`);
 }
 
 async function run(): Promise<void> {

@@ -26,7 +26,11 @@ export class AccommodationBookingsService {
     current: JwtPayloadUser,
   ): Promise<AccommodationBooking> {
     this.assertValidStayDates(dto.checkInDate, dto.checkOutDate);
-    await this.budgetsService.findOne(dto.budgetId);
+    const budget = await this.budgetsService.findOne(dto.budgetId);
+    this.budgetsService.assertAccommodationTypeMatchesBudget(
+      dto.accommodationType,
+      budget,
+    );
 
     const entity = this.bookingsRepository.create({
       bookedByUserId: current.sub,

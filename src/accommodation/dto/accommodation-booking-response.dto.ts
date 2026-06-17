@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AccommodationBudgetResponseDto } from './accommodation-budget-response.dto';
+import { ACCOMMODATION_TYPES } from '../constants/accommodation-type';
 
 export class AccommodationBookingResponseDto {
   @ApiProperty()
@@ -25,7 +26,7 @@ export class AccommodationBookingResponseDto {
   @ApiPropertyOptional({ nullable: true, example: '15551234567' })
   guestPhone: string | null;
 
-  @ApiProperty({ example: 'Hotel' })
+  @ApiProperty({ enum: ACCOMMODATION_TYPES, example: 'hotel' })
   accommodationType: string;
 
   @ApiProperty()

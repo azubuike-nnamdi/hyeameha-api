@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsDateString,
   IsEmail,
+  IsIn,
   IsOptional,
   IsString,
   IsUUID,
@@ -12,6 +13,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { PHONE_DIGITS_ONLY_MESSAGE } from '../../common/validation/phone-policy';
+import { ACCOMMODATION_TYPES } from '../constants/accommodation-type';
 
 export class CreateAccommodationBookingDto {
   @ApiProperty({
@@ -47,14 +49,19 @@ export class CreateAccommodationBookingDto {
   @Matches(/^\d{7,15}$/, { message: PHONE_DIGITS_ONLY_MESSAGE })
   guestPhone?: string;
 
-  @ApiProperty({ example: 'Hotel' })
+  @ApiProperty({
+    enum: ACCOMMODATION_TYPES,
+    example: 'hotel',
+    description:
+      'Must match the accommodationType of the selected budget tier.',
+  })
   @IsString()
-  @MinLength(1)
-  @MaxLength(64)
+  @IsIn([...ACCOMMODATION_TYPES])
   accommodationType: string;
 
   @ApiProperty({
-    description: 'Selected budget tier id from GET /accommodation/budgets',
+    description:
+      'Budget id from GET /accommodation/budgets for the selected accommodation type',
   })
   @IsUUID()
   budgetId: string;

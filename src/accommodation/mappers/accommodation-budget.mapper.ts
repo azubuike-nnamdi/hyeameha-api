@@ -6,7 +6,9 @@ export function toAccommodationBudgetResponseDto(
 ): AccommodationBudgetResponseDto {
   return {
     id: budget.id,
+    accommodationType: budget.accommodationType,
     name: budget.name,
+    pricingType: budget.maxPrice === null ? 'fixed' : 'range',
     minPrice: budget.minPrice,
     maxPrice: budget.maxPrice,
     createdAt: budget.createdAt,
