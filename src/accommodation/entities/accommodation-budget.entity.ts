@@ -14,6 +14,9 @@ export class AccommodationBudget {
   @Column({ type: 'varchar', length: 64 })
   name: string;
 
+  @Column({ name: 'accommodation_type', type: 'varchar', length: 32 })
+  accommodationType: string;
+
   @Column({
     name: 'min_price',
     type: 'decimal',
@@ -27,8 +30,9 @@ export class AccommodationBudget {
     type: 'decimal',
     precision: 10,
     scale: 2,
+    nullable: true,
   })
-  maxPrice: string;
+  maxPrice: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
