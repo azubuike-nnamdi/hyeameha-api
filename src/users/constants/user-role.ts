@@ -16,3 +16,6 @@ export const BUDGET_MANAGE_ROLES: UserRole[] = ['super_admin', 'admin'];
 
 /** Roles that can list all accommodation bookings (not only their own). */
 export const BOOKING_ADMIN_ROLES: UserRole[] = ['super_admin', 'admin'];
+
+/** Roles allowed to list all users. */
+export const USER_LIST_ROLES: UserRole[] = ['super_admin', 'admin'];

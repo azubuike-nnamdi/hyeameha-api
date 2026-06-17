@@ -107,7 +107,7 @@ Use **refresh** when the access token expires: send the stored refresh token to 
 | PATCH  | `/api/v1/users/me`          | Bearer | Update name / phone               |
 | POST   | `/api/v1/users/me/password` | Bearer | Change password (204)             |
 | DELETE | `/api/v1/users/me`          | Bearer | Soft-delete account               |
-| GET    | `/api/v1/users`             | Bearer | List users (sanitized)            |
+| GET    | `/api/v1/users`             | Bearer | List users (sanitized); **admin or super_admin only** |
 
 ### Events
 

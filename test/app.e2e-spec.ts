@@ -212,6 +212,18 @@ describe('Hyeameha API e2e', () => {
     expect(body.data.refreshTokenHash).toBeUndefined();
   });
 
+  it('GET /api/v1/users should forbid non-admin users', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/users')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(403);
+
+    const body = res.body as ApiEnvelope<null>;
+    expect(body.statusCode).toBe(403);
+    expect(body.message).toBe('Insufficient permissions');
+    expect(body.data).toBeNull();
+  });
+
   it('PATCH /api/v1/users/me should update profile', async () => {
     const res = await request(app.getHttpServer())
       .patch('/api/v1/users/me')
