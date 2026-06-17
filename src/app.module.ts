@@ -10,6 +10,7 @@ import { EventsModule } from './events/events.module';
 import { TrainingModule } from './training/training.module';
 import { AccommodationModule } from './accommodation/accommodation.module';
 import { AirportPickupModule } from './airport-pickup/airport-pickup.module';
+import { RidesModule } from './rides/rides.module';
 import { HealthModule } from './health/health.module';
 import { LoggingModule } from './logging/logging.module';
 
@@ -26,6 +27,7 @@ import { LoggingModule } from './logging/logging.module';
     TrainingModule,
     AccommodationModule,
     AirportPickupModule,
+    RidesModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
