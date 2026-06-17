@@ -5,6 +5,8 @@ import { Event } from '../events/entities/event.entity';
 import { ApiFailureLog } from '../logging/entities/api-failure-log.entity';
 import { AccommodationBooking } from '../accommodation/entities/accommodation-booking.entity';
 import { AccommodationBudget } from '../accommodation/entities/accommodation-budget.entity';
+import { Airline } from '../airport-pickup/entities/airline.entity';
+import { AirportPickupBooking } from '../airport-pickup/entities/airport-pickup-booking.entity';
 import { Training } from '../training/entities/training.entity';
 import { User } from '../users/entities/user.entity';
 
@@ -34,6 +36,8 @@ export default new DataSource({
         Training,
         AccommodationBudget,
         AccommodationBooking,
+        Airline,
+        AirportPickupBooking,
         PasswordResetOtp,
         ApiFailureLog,
       ],

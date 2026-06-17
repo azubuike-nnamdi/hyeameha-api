@@ -19,3 +19,16 @@ export const BOOKING_ADMIN_ROLES: UserRole[] = ['super_admin', 'admin'];
 
 /** Roles allowed to list all users. */
 export const USER_LIST_ROLES: UserRole[] = ['super_admin', 'admin'];
+
+/** Roles allowed to create, update, and delete airlines. */
+export const AIRLINE_MANAGE_ROLES: UserRole[] = [
+  'super_admin',
+  'admin',
+  'editor',
+];
+
+/** Roles that can list all airport pickup bookings (not only their own). */
+export const AIRPORT_PICKUP_BOOKING_ADMIN_ROLES: UserRole[] = [
+  'super_admin',
+  'admin',
+];
