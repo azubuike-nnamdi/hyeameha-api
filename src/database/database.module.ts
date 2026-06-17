@@ -8,6 +8,8 @@ import { AccommodationBooking } from '../accommodation/entities/accommodation-bo
 import { AccommodationBudget } from '../accommodation/entities/accommodation-budget.entity';
 import { Airline } from '../airport-pickup/entities/airline.entity';
 import { AirportPickupBooking } from '../airport-pickup/entities/airport-pickup-booking.entity';
+import { Ride } from '../rides/entities/ride.entity';
+import { RideBooking } from '../rides/entities/ride-booking.entity';
 import { Training } from '../training/entities/training.entity';
 import { User } from '../users/entities/user.entity';
 
@@ -30,6 +32,8 @@ import { User } from '../users/entities/user.entity';
           AccommodationBooking,
           Airline,
           AirportPickupBooking,
+          Ride,
+          RideBooking,
           PasswordResetOtp,
           ApiFailureLog,
         ],
