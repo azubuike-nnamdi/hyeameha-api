@@ -8,10 +8,12 @@ import {
   NotFoundException,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiExtraModels,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -19,8 +21,11 @@ import {
 } from '@nestjs/swagger';
 import { ApiFailureTag } from '../logging';
 import { apiResponse } from '../common';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import type { JwtPayloadUser } from '../auth/types/jwt-payload-user';
+import { USER_LIST_ROLES } from './constants/user-role';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
@@ -73,9 +78,12 @@ export class UsersController {
   @ApiOperation({
     summary: 'List users (sanitized fields)',
     description:
-      'Admin-style listing; each item in `data` matches `UserResponseDto` (no secrets).',
+      '**super_admin or admin only.** Each item in `data` matches `UserResponseDto` (no secrets). Regular users should use `GET /users/me`.',
   })
   @ApiOkResponse({ type: UserListApiResponseDto })
+  @ApiForbiddenResponse({ description: 'Requires super_admin or admin role' })
+  @Roles(...USER_LIST_ROLES)
+  @UseGuards(RolesGuard)
   @Get()
   async findAll() {
     const users = await this.usersService.findAll();

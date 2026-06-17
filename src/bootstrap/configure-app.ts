@@ -127,6 +127,11 @@ export function configureApp(app: INestApplication): void {
         '- Failed API responses (HTTP ≥ 400) are logged to PostgreSQL table `api_failure_logs` with searchable `tag` (`login`, `register`, `events`, …)',
         '- `user.role`: `user` (default), `editor`, `admin`, or `super_admin` (set in DB)',
         '',
+        '### Users',
+        '- `GET /api/v1/users/me` — current profile (all authenticated users)',
+        '- `PATCH|POST|DELETE /api/v1/users/me` — manage own profile (all authenticated users)',
+        '- `GET /api/v1/users` — list all users (**super_admin or admin only**)',
+        '',
         '### Events',
         '- `GET /api/v1/events` — local events (`source: local`) + eGotickets partner events (`source: partner`)',
         '- `GET /api/v1/events/:id` — UUID (local) or numeric id (partner); partner detail includes `tickets`',
@@ -175,7 +180,10 @@ export function configureApp(app: INestApplication): void {
       'auth',
       'Registration, login, refresh, password reset, and email notifications',
     )
-    .addTag('users', 'Current user profile (Bearer auth)')
+    .addTag(
+      'users',
+      'Current user profile (Bearer auth); list all users (super_admin or admin only)',
+    )
     .addTag(
       'events',
       'Local events (admin CRUD) and eGotickets partner events (read + book)',
