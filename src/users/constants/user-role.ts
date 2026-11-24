@@ -38,3 +38,6 @@ export const RIDE_MANAGE_ROLES: UserRole[] = ['super_admin', 'admin', 'editor'];
 
 /** Roles that can list all ride bookings (not only their own). */
 export const RIDE_BOOKING_ADMIN_ROLES: UserRole[] = ['super_admin', 'admin'];
+
+/** Roles allowed to create, update, and delete local events. */
+export const EVENT_MANAGE_ROLES: UserRole[] = ['super_admin', 'admin'];

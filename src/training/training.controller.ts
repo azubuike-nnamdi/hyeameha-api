@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -110,7 +111,7 @@ export class TrainingController {
   })
   @ApiOkResponse({ type: TrainingApiResponseDto })
   @ApiNotFoundResponse({ description: 'Training not found' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const training = await this.trainingService.findOne(id);
     return apiResponse(
       toTrainingResponseDto(training),
@@ -130,7 +131,7 @@ export class TrainingController {
   @ApiOkResponse({ type: TrainingApiResponseDto })
   @ApiNotFoundResponse({ description: 'Training not found' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() current: JwtPayloadUser,
     @Body() dto: UpdateTrainingDto,
   ) {
@@ -152,7 +153,9 @@ export class TrainingController {
   })
   @ApiOkResponse({ type: TrainingDeleteApiResponseDto })
   @ApiNotFoundResponse({ description: 'Training not found' })
-  async remove(@Param('id') id: string): Promise<ApiDataResponse<null>> {
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ApiDataResponse<null>> {
     await this.trainingService.remove(id);
     return apiResponse(null, TRAINING_DELETE_SUCCESS_MESSAGE);
   }

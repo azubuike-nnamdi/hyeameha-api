@@ -38,4 +38,25 @@ describe('sanitizeRequestBody', () => {
       otp: '[REDACTED]',
     });
   });
+
+  it('redacts nested sensitive fields and third-party contact details', () => {
+    expect(
+      sanitizeRequestBody({
+        guestEmail: 'g@b.com',
+        guestPhone: '15551234567',
+        payment: { cardNumber: '4111', cvv: '123', amount: 10 },
+        items: [{ refreshToken: 'x', qty: 1 }],
+      }),
+    ).toEqual({
+      guestEmail: '[REDACTED]',
+      guestPhone: '[REDACTED]',
+      payment: { cardNumber: '[REDACTED]', cvv: '[REDACTED]', amount: 10 },
+      items: [{ refreshToken: '[REDACTED]', qty: 1 }],
+    });
+  });
+
+  it('truncates very long strings', () => {
+    const result = sanitizeRequestBody({ note: 'a'.repeat(2000) });
+    expect((result?.note as string).length).toBeLessThan(1100);
+  });
 });

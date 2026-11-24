@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -116,7 +117,7 @@ export class AccommodationBudgetsController {
   })
   @ApiOkResponse({ type: AccommodationBudgetApiResponseDto })
   @ApiNotFoundResponse({ description: 'Accommodation budget not found' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const budget = await this.budgetsService.findOne(id);
     return apiResponse(
       toAccommodationBudgetResponseDto(budget),
@@ -132,7 +133,7 @@ export class AccommodationBudgetsController {
   @ApiOkResponse({ type: AccommodationBudgetApiResponseDto })
   @ApiNotFoundResponse({ description: 'Accommodation budget not found' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() current: JwtPayloadUser,
     @Body() dto: UpdateAccommodationBudgetDto,
   ) {
@@ -150,7 +151,9 @@ export class AccommodationBudgetsController {
   @ApiOperation({ summary: 'Delete an accommodation budget tier (admin only)' })
   @ApiOkResponse({ type: AccommodationBudgetDeleteApiResponseDto })
   @ApiNotFoundResponse({ description: 'Accommodation budget not found' })
-  async remove(@Param('id') id: string): Promise<ApiDataResponse<null>> {
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ApiDataResponse<null>> {
     await this.budgetsService.remove(id);
     return apiResponse(null, ACCOMMODATION_BUDGET_DELETE_SUCCESS_MESSAGE);
   }

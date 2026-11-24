@@ -24,6 +24,7 @@ Object.assign(process.env, {
   THROTTLE_AUTH_LIMIT: process.env.THROTTLE_AUTH_LIMIT ?? '5',
   THROTTLE_DEFAULT_TTL: process.env.THROTTLE_DEFAULT_TTL ?? '60',
   THROTTLE_DEFAULT_LIMIT: process.env.THROTTLE_DEFAULT_LIMIT ?? '100',
+  THROTTLE_STORAGE: process.env.THROTTLE_STORAGE ?? 'memory',
   EVENT_BASE_URL: process.env.EVENT_BASE_URL ?? 'https://egotickets.com',
   EVENT_API_KEY: process.env.EVENT_API_KEY ?? 'e2e-test-partner-api-key',
   MAIL_ENABLED: process.env.MAIL_ENABLED ?? 'false',

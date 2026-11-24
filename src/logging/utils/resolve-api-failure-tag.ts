@@ -1,13 +1,15 @@
 /** Paths that never write to `api_failure_logs`. */
 const SKIPPED_PATH_PREFIXES = ['/health', '/docs', '/docs-json'];
 
-const SENSITIVE_REQUEST_KEYS = new Set([
-  'password',
-  'currentPassword',
-  'newPassword',
-  'refreshToken',
-  'otp',
-]);
+/**
+ * Request-body keys whose values are never persisted. Matched case-insensitively at any
+ * depth: credentials, tokens, OTPs, payment data, and contact details of third parties.
+ */
+const SENSITIVE_KEY_PATTERN =
+  /pass(word)?|token|otp|secret|authorization|api[-_]?key|card|cvv|cvc|pin$|phone|guestemail/i;
+
+const MAX_SANITIZE_DEPTH = 6;
+const MAX_STRING_LENGTH = 1000;
 
 export function shouldSkipApiFailureLog(path: string): boolean {
   const pathname = path.split('?')[0] ?? path;
@@ -46,12 +48,33 @@ export function sanitizeRequestBody(
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return null;
   }
-  const record = body as Record<string, unknown>;
-  const sanitized: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(record)) {
-    sanitized[key] = SENSITIVE_REQUEST_KEYS.has(key) ? '[REDACTED]' : value;
+  return sanitizeValue(body, 0) as Record<string, unknown>;
+}
+
+function sanitizeValue(value: unknown, depth: number): unknown {
+  if (depth > MAX_SANITIZE_DEPTH) {
+    return '[TRUNCATED]';
   }
-  return sanitized;
+  if (typeof value === 'string') {
+    return value.length > MAX_STRING_LENGTH
+      ? `${value.slice(0, MAX_STRING_LENGTH)}…`
+      : value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeValue(item, depth + 1));
+  }
+  if (value && typeof value === 'object') {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(
+      value as Record<string, unknown>,
+    )) {
+      sanitized[key] = SENSITIVE_KEY_PATTERN.test(key)
+        ? '[REDACTED]'
+        : sanitizeValue(child, depth + 1);
+    }
+    return sanitized;
+  }
+  return value;
 }
 
 export function extractErrorMessage(responseBody: string | object): string {

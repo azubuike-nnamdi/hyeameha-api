@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -121,7 +122,7 @@ export class AirlinesController {
   })
   @ApiOkResponse({ type: AirlineApiResponseDto })
   @ApiNotFoundResponse({ description: 'Airline not found' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const airline = await this.airlinesService.findOne(id);
     return apiResponse(
       toAirlineResponseDto(airline),
@@ -141,7 +142,7 @@ export class AirlinesController {
   @ApiOkResponse({ type: AirlineApiResponseDto })
   @ApiNotFoundResponse({ description: 'Airline not found' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() current: JwtPayloadUser,
     @Body() dto: UpdateAirlineDto,
   ) {
@@ -163,7 +164,9 @@ export class AirlinesController {
   })
   @ApiOkResponse({ type: AirlineDeleteApiResponseDto })
   @ApiNotFoundResponse({ description: 'Airline not found' })
-  async remove(@Param('id') id: string): Promise<ApiDataResponse<null>> {
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ApiDataResponse<null>> {
     await this.airlinesService.remove(id);
     return apiResponse(null, AIRLINE_DELETE_SUCCESS_MESSAGE);
   }
