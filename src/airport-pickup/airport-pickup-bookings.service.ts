@@ -6,6 +6,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { JwtPayloadUser } from '../auth/types/jwt-payload-user';
+import { assertNotPastDate } from '../common/validation/assert-not-past-date';
+import type { Pagination } from '../common/dto/pagination-query.dto';
 import { AIRPORT_PICKUP_BOOKING_ADMIN_ROLES } from '../users/constants/user-role';
 import { CalculateAirportPickupPriceDto } from './dto/calculate-airport-pickup-price.dto';
 import { CreateAirportPickupBookingDto } from './dto/create-airport-pickup-booking.dto';
@@ -36,6 +38,7 @@ export class AirportPickupBookingsService {
     dto: CreateAirportPickupBookingDto,
     current: JwtPayloadUser,
   ): Promise<AirportPickupBooking> {
+    assertNotPastDate(dto.pickupDate, 'pickupDate');
     await this.airlinesService.findActiveForBooking(dto.airlineId);
     const price = calculateAirportPickupPrice(dto.passengerCount);
 
@@ -63,12 +66,17 @@ export class AirportPickupBookingsService {
     return this.findEntityById(saved.id);
   }
 
-  async findAll(current: JwtPayloadUser): Promise<AirportPickupBooking[]> {
+  async findAll(
+    current: JwtPayloadUser,
+    pagination?: Pagination,
+  ): Promise<AirportPickupBooking[]> {
     const isAdmin = AIRPORT_PICKUP_BOOKING_ADMIN_ROLES.includes(current.role);
     return this.bookingsRepository.find({
       where: isAdmin ? {} : { bookedByUserId: current.sub },
       relations: { airline: true },
       order: { createdAt: 'DESC' },
+      skip: pagination?.skip,
+      take: pagination?.take,
     });
   }
 

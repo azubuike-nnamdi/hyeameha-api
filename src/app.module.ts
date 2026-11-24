@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { AppConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
@@ -13,11 +14,13 @@ import { AirportPickupModule } from './airport-pickup/airport-pickup.module';
 import { RidesModule } from './rides/rides.module';
 import { HealthModule } from './health/health.module';
 import { LoggingModule } from './logging/logging.module';
+import { ThrottlingModule } from './throttling/throttling.module';
 
 @Module({
   imports: [
     AppConfigModule,
     ScheduleModule.forRoot(),
+    ThrottlingModule,
     DatabaseModule,
     LoggingModule,
     HealthModule,
@@ -29,6 +32,10 @@ import { LoggingModule } from './logging/logging.module';
     AirportPickupModule,
     RidesModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
+  providers: [
+    // Order matters: rate limiting runs before authentication.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule {}

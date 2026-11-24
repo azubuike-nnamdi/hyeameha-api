@@ -8,6 +8,7 @@ import {
   NotFoundException,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -20,7 +21,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ApiFailureTag } from '../logging';
-import { apiResponse } from '../common';
+import { PaginationQueryDto, apiResponse, toPagination } from '../common';
+import { AuthThrottle } from '../throttling/auth-throttle.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -78,15 +80,15 @@ export class UsersController {
   @ApiOperation({
     summary: 'List users (sanitized fields)',
     description:
-      '**super_admin or admin only.** Each item in `data` matches `UserResponseDto` (no secrets). Regular users should use `GET /users/me`.',
+      '**super_admin or admin only.** Paginated with `?page=&limit=` (default 50, max 100). Each item in `data` matches `UserResponseDto` (no secrets). Regular users should use `GET /users/me`.',
   })
   @ApiOkResponse({ type: UserListApiResponseDto })
   @ApiForbiddenResponse({ description: 'Requires super_admin or admin role' })
   @Roles(...USER_LIST_ROLES)
   @UseGuards(RolesGuard)
   @Get()
-  async findAll() {
-    const users = await this.usersService.findAll();
+  async findAll(@Query() query: PaginationQueryDto) {
+    const users = await this.usersService.findAll(toPagination(query));
     return apiResponse(
       users.map((u) => toUserResponseDto(u)),
       USERS_LIST_SUCCESS_MESSAGE,
@@ -112,8 +114,13 @@ export class UsersController {
     return apiResponse(toUserResponseDto(updated), USER_UPDATE_SUCCESS_MESSAGE);
   }
 
-  @ApiOperation({ summary: 'Change password for the current user' })
+  @ApiOperation({
+    summary: 'Change password for the current user',
+    description:
+      'Signs out every session, including this one: log in again with the new password.',
+  })
   @ApiOkResponse({ type: UserPasswordChangeApiResponseDto })
+  @AuthThrottle()
   @HttpCode(HttpStatus.OK)
   @Post('me/password')
   async changePassword(

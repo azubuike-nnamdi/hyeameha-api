@@ -15,6 +15,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
@@ -41,6 +42,7 @@ import {
   AUTH_RESET_PASSWORD_MESSAGE,
 } from './auth.messages';
 import { getLoginContext } from './utils/login-context.util';
+import { AuthThrottle } from '../throttling/auth-throttle.decorator';
 
 @ApiTags('auth')
 @ApiExtraModels(
@@ -55,6 +57,7 @@ import { getLoginContext } from './utils/login-context.util';
   ResetPasswordDto,
 )
 @Public()
+@AuthThrottle()
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -103,6 +106,7 @@ export class AuthController {
   @ApiUnauthorizedResponse({
     description: 'Invalid email or password',
   })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit exceeded' })
   @ApiBody({ type: LoginDto })
   async login(@Body() dto: LoginDto, @Req() req: Request) {
     const data = await this.authService.login(dto, getLoginContext(req));
@@ -153,7 +157,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'Reset password with OTP',
     description:
-      'Verifies the OTP from email, sets a new password, deletes the OTP record, and revokes refresh tokens.',
+      'Verifies the OTP from email, sets a new password, deletes the OTP record, and signs out all sessions. The code is discarded after PASSWORD_RESET_OTP_MAX_ATTEMPTS wrong tries.',
   })
   @ApiOkResponse({ type: AuthMessageApiResponseDto })
   @ApiBadRequestResponse({ description: 'Validation error' })

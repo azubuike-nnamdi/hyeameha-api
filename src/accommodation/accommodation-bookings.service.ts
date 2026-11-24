@@ -7,6 +7,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { JwtPayloadUser } from '../auth/types/jwt-payload-user';
+import { assertNotPastDate } from '../common/validation/assert-not-past-date';
+import type { Pagination } from '../common/dto/pagination-query.dto';
 import { BOOKING_ADMIN_ROLES } from '../users/constants/user-role';
 import { CreateAccommodationBookingDto } from './dto/create-accommodation-booking.dto';
 import { AccommodationBooking } from './entities/accommodation-booking.entity';
@@ -25,6 +27,7 @@ export class AccommodationBookingsService {
     dto: CreateAccommodationBookingDto,
     current: JwtPayloadUser,
   ): Promise<AccommodationBooking> {
+    assertNotPastDate(dto.checkInDate, 'checkInDate');
     this.assertValidStayDates(dto.checkInDate, dto.checkOutDate);
     const budget = await this.budgetsService.findOne(dto.budgetId);
     this.budgetsService.assertAccommodationTypeMatchesBudget(
@@ -55,12 +58,17 @@ export class AccommodationBookingsService {
     return this.findEntityById(saved.id);
   }
 
-  async findAll(current: JwtPayloadUser): Promise<AccommodationBooking[]> {
+  async findAll(
+    current: JwtPayloadUser,
+    pagination?: Pagination,
+  ): Promise<AccommodationBooking[]> {
     const isAdmin = BOOKING_ADMIN_ROLES.includes(current.role);
     return this.bookingsRepository.find({
       where: isAdmin ? {} : { bookedByUserId: current.sub },
       relations: { budget: true },
       order: { createdAt: 'DESC' },
+      skip: pagination?.skip,
+      take: pagination?.take,
     });
   }
 

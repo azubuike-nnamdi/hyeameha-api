@@ -31,8 +31,11 @@ describe('AccommodationBookingsController', () => {
 
   it('passes the current user to findAll', async () => {
     bookingsService.findAll.mockResolvedValue([]);
-    await controller.findAll(userJwt);
-    expect(bookingsService.findAll).toHaveBeenCalledWith(userJwt);
+    await controller.findAll(userJwt, { page: 2, limit: 10 });
+    expect(bookingsService.findAll).toHaveBeenCalledWith(userJwt, {
+      skip: 10,
+      take: 10,
+    });
   });
 
   it('passes the current user to findOne', async () => {

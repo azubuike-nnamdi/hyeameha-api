@@ -4,3 +4,10 @@ const UUID_RE =
 export function isLocalEventId(id: string): boolean {
   return UUID_RE.test(id);
 }
+
+const PARTNER_ID_RE = /^\d{1,18}$/;
+
+/** eGotickets ids are numeric. */
+export function isPartnerEventId(id: string): boolean {
+  return PARTNER_ID_RE.test(id);
+}

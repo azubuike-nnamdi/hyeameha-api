@@ -2,6 +2,7 @@ import {
   BadRequestException,
   HttpException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,10 +14,13 @@ import { Event } from './entities/event.entity';
 import { toEventResponseDto } from './mappers/event.mapper';
 import { toPartnerEventResponseDto } from './mappers/partner-event.mapper';
 import { PartnerEventsClient } from './partner/partner-events.client';
-import { isLocalEventId } from './utils/event-id.util';
+import { isLocalEventId, isPartnerEventId } from './utils/event-id.util';
+import type { PartnerEvent } from './types/partner-event.types';
 
 @Injectable()
 export class EventsService {
+  private readonly logger = new Logger(EventsService.name);
+
   constructor(
     @InjectRepository(Event)
     private readonly eventsRepository: Repository<Event>,
@@ -34,7 +38,17 @@ export class EventsService {
   async findAll(): Promise<EventResponseDto[]> {
     const [localEvents, partnerEvents] = await Promise.all([
       this.eventsRepository.find({ order: { eventDate: 'ASC' } }),
-      this.partnerEvents.listEvents(),
+      // Partner outage should degrade to local events only, not fail the whole list.
+      this.partnerEvents
+        .listEvents()
+        .catch((error: unknown): PartnerEvent[] => {
+          this.logger.warn(
+            `Partner events unavailable; returning local events only: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+          return [];
+        }),
     ]);
 
     const local = localEvents.map(toEventResponseDto);
@@ -51,6 +65,9 @@ export class EventsService {
         throw new NotFoundException('Event not found');
       }
       return toEventResponseDto(event);
+    }
+    if (!isPartnerEventId(id)) {
+      throw new NotFoundException('Event not found');
     }
 
     try {
@@ -94,9 +111,24 @@ export class EventsService {
   async buyTicket(
     id: string,
     body: Record<string, unknown>,
+    userId: string,
   ): Promise<Record<string, unknown>> {
     this.assertPartnerEventId(id);
-    return this.partnerEvents.buyTicket(id, body);
+    this.logger.log(`buy_ticket requested: user=${userId} partnerEvent=${id}`);
+    try {
+      const result = await this.partnerEvents.buyTicket(id, body);
+      this.logger.log(
+        `buy_ticket succeeded: user=${userId} partnerEvent=${id}`,
+      );
+      return result;
+    } catch (error: unknown) {
+      this.logger.warn(
+        `buy_ticket failed: user=${userId} partnerEvent=${id} status=${
+          error instanceof HttpException ? error.getStatus() : 'unknown'
+        }`,
+      );
+      throw error;
+    }
   }
 
   private assertLocalEventId(id: string): void {
@@ -108,7 +140,7 @@ export class EventsService {
   }
 
   private assertPartnerEventId(id: string): void {
-    if (isLocalEventId(id)) {
+    if (!isPartnerEventId(id)) {
       throw new BadRequestException(
         'Ticket booking is only available for partner events',
       );

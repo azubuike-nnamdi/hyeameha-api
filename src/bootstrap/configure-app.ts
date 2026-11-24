@@ -63,13 +63,17 @@ import { UserResponseDto } from '../users/dto/user-response.dto';
 export function configureApp(app: INestApplication): void {
   const config = app.get(ConfigService);
 
-  // Honor X-Forwarded-For / X-Real-IP for login notification emails
+  // Trust only the configured number of proxy hops so clients cannot spoof `req.ip`
+  // with their own X-Forwarded-For header (used for rate limiting and login alerts).
   const httpAdapter = app.getHttpAdapter().getInstance() as {
-    set?: (key: string, value: boolean) => void;
+    set?: (key: string, value: number | boolean) => void;
   };
-  httpAdapter.set?.('trust proxy', true);
+  httpAdapter.set?.('trust proxy', config.get<number>('TRUST_PROXY_HOPS', 1));
 
   const isProd = config.get<string>('NODE_ENV') === 'production';
+  const swaggerEnabled =
+    (config.get<string>('SWAGGER_ENABLED') ?? (isProd ? 'false' : 'true')) ===
+    'true';
   // Strict CSP breaks Swagger UI in many browsers; keep full helmet defaults in production only.
   app.use(
     helmet(
@@ -103,6 +107,12 @@ export function configureApp(app: INestApplication): void {
     ],
   });
 
+  if (swaggerEnabled) {
+    setupSwagger(app);
+  }
+}
+
+function setupSwagger(app: INestApplication): void {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Hyeameha API')
     .setDescription(
@@ -118,7 +128,9 @@ export function configureApp(app: INestApplication): void {
         '- Error: `{ statusCode, message, data }` (`data` is `null`, or `{ errors: string[] }` for validation failures)',
         '',
         '### Authentication',
-        '- Protected routes: `Authorization: Bearer <accessToken>`',
+        '- Protected routes: `Authorization: Bearer <accessToken>` (short-lived; renew with `/auth/refresh`)',
+        '- Changing or resetting the password signs out every session',
+        '- Rate limits apply per client IP (stricter on `/auth/*`); exceeding them returns **429**',
         '- Register: `POST /api/v1/auth/register` — welcome email; tokens and `user` in `data`',
         '- Login: `POST /api/v1/auth/login` — login alert email (IP / device); tokens and `user` in `data`',
         '- Refresh: `POST /api/v1/auth/refresh` — body `{ refreshToken }`; new tokens in `data`',
@@ -130,12 +142,12 @@ export function configureApp(app: INestApplication): void {
         '### Users',
         '- `GET /api/v1/users/me` — current profile (all authenticated users)',
         '- `PATCH|POST|DELETE /api/v1/users/me` — manage own profile (all authenticated users)',
-        '- `GET /api/v1/users` — list all users (**super_admin or admin only**)',
+        '- `GET /api/v1/users` — list all users (**super_admin or admin only**); `?page=&limit=` (default 50, max 100)',
         '',
         '### Events',
         '- `GET /api/v1/events` — local events (`source: local`) + eGotickets partner events (`source: partner`)',
         '- `GET /api/v1/events/:id` — UUID (local) or numeric id (partner); partner detail includes `tickets`',
-        '- `POST|PATCH|DELETE /api/v1/events` — **admin only**; local UUID events only',
+        '- `POST|PATCH|DELETE /api/v1/events` — **super_admin or admin only**; local UUID events only',
         '- `POST /api/v1/events/:id/calculate_charges` — proxy to eGotickets (partner id; body forwarded)',
         '- `POST /api/v1/events/:id/buy_ticket` — proxy to eGotickets (partner id; body forwarded)',
         '- Local create/update: `eventDate` `YYYY-MM-DD`; `status` one of `popular`, `ongoing`, `new`',
@@ -158,7 +170,7 @@ export function configureApp(app: INestApplication): void {
         '',
         '### Accommodation bookings',
         '- `POST /api/v1/accommodation/bookings` — book accommodation (all authenticated users)',
-        '- `GET /api/v1/accommodation/bookings` — users see own bookings; admins see all',
+        '- `GET /api/v1/accommodation/bookings` — users see own bookings; admins see all; `?page=&limit=`',
         '- `GET /api/v1/accommodation/bookings/:id` — users see own booking; admins see any',
         '- When `isBookingForSelf` is false, `guestFirstName`, `guestLastName`, `guestEmail`, and `guestPhone` are required',
         '- `bookedByUserId` is always captured from the access token',

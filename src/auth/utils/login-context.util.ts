@@ -3,32 +3,20 @@ import type { Request } from 'express';
 export type LoginContext = {
   ipAddress: string;
   userAgent: string | null;
-  /** Human-readable line for emails (IP + optional forwarded hint). */
+  /** Human-readable line for emails (IP + user agent). */
   locationSummary: string;
 };
 
+/**
+ * Uses `req.ip`, which Express derives from X-Forwarded-For only up to the configured
+ * `trust proxy` hop count; raw forwarding headers are client-controlled and not trusted.
+ */
 export function getLoginContext(req: Request): LoginContext {
-  const forwarded = req.headers['x-forwarded-for'];
-  const forwardedIp =
-    typeof forwarded === 'string'
-      ? forwarded.split(',')[0]?.trim()
-      : Array.isArray(forwarded)
-        ? forwarded[0]?.split(',')[0]?.trim()
-        : undefined;
+  const ipAddress = req.ip || req.socket.remoteAddress || 'Unknown';
 
-  const ipAddress =
-    forwardedIp ||
-    (typeof req.headers['x-real-ip'] === 'string'
-      ? req.headers['x-real-ip']
-      : undefined) ||
-    req.ip ||
-    req.socket.remoteAddress ||
-    'Unknown';
-
+  const rawUserAgent = req.headers['user-agent'];
   const userAgent =
-    typeof req.headers['user-agent'] === 'string'
-      ? req.headers['user-agent']
-      : null;
+    typeof rawUserAgent === 'string' ? rawUserAgent.slice(0, 256) : null;
 
   const locationSummary = userAgent
     ? `IP address ${ipAddress} (${userAgent})`

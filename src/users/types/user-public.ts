@@ -8,6 +8,8 @@ export type UserPublic = {
   lastName: string;
   phone: string | null;
   role: UserRole;
+  /** Session version (not exposed in API responses). */
+  tokenVersion: number;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;

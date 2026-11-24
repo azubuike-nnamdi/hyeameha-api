@@ -1,9 +1,10 @@
 import { HttpService } from '@nestjs/axios';
 import {
   BadGatewayException,
-  HttpException,
+  BadRequestException,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AxiosError } from 'axios';
@@ -107,14 +108,44 @@ export class PartnerEventsClient {
     return /^bearer\s/i.test(key) ? key : `Bearer ${key}`;
   }
 
+  /**
+   * Maps partner failures to our own status codes. The partner's status is never passed
+   * through (a partner 401 would look like the client's session expired) and only a short
+   * message string is forwarded, never the raw partner body.
+   */
   private throwPartnerError(error: unknown): never {
     if (this.isAxiosError(error) && error.response) {
       const status = error.response.status;
-      const payload = error.response.data ?? { error: 'Partner API error' };
-      throw new HttpException(payload, status);
+      const message = this.extractPartnerMessage(error.response.data);
+      if (status === 404) {
+        throw new NotFoundException(message ?? 'Event not found');
+      }
+      if (status >= 400 && status < 500 && status !== 401 && status !== 403) {
+        throw new BadRequestException(message ?? 'Request rejected by partner');
+      }
+      this.logger.error(
+        `Partner events API returned ${status}${message ? `: ${message}` : ''}`,
+      );
+      throw new BadGatewayException('Partner events API is unavailable');
     }
-    this.logger.error('Partner events API request failed', error);
+    this.logger.error(
+      'Partner events API request failed',
+      error instanceof Error ? error.message : String(error),
+    );
     throw new BadGatewayException('Partner events API is unavailable');
+  }
+
+  private extractPartnerMessage(data: unknown): string | undefined {
+    let message: unknown;
+    if (typeof data === 'string') {
+      message = data;
+    } else if (typeof data === 'object' && data !== null) {
+      const record = data as Record<string, unknown>;
+      message = record.message ?? record.error;
+    }
+    return typeof message === 'string' && message.trim()
+      ? message.trim().slice(0, 300)
+      : undefined;
   }
 
   private isAxiosError(error: unknown): error is AxiosError {

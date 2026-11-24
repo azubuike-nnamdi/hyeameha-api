@@ -36,6 +36,10 @@ export class User {
   @Column({ name: 'refresh_token_hash', type: 'varchar', nullable: true })
   refreshTokenHash: string | null;
 
+  /** Bumped on password change/reset and account deletion to revoke all issued JWTs. */
+  @Column({ name: 'token_version', type: 'int', default: 0 })
+  tokenVersion: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

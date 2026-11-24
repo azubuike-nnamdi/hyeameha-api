@@ -6,6 +6,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { JwtPayloadUser } from '../auth/types/jwt-payload-user';
+import { assertNotPastDate } from '../common/validation/assert-not-past-date';
+import type { Pagination } from '../common/dto/pagination-query.dto';
 import { RIDE_BOOKING_ADMIN_ROLES } from '../users/constants/user-role';
 import { CalculateRidePriceDto } from './dto/calculate-ride-price.dto';
 import { CreateRideBookingDto } from './dto/create-ride-booking.dto';
@@ -44,6 +46,7 @@ export class RideBookingsService {
     dto: CreateRideBookingDto,
     current: JwtPayloadUser,
   ): Promise<RideBooking> {
+    assertNotPastDate(dto.pickupDate, 'pickupDate');
     const ride = await this.ridesService.findActiveForBooking(dto.rideId);
     assertValidNumberOfDays(dto.numberOfDays);
     assertPassengerCountWithinCapacity(dto.passengerCount, ride.maxPassengers);
@@ -74,12 +77,17 @@ export class RideBookingsService {
     return this.findEntityById(saved.id);
   }
 
-  async findAll(current: JwtPayloadUser): Promise<RideBooking[]> {
+  async findAll(
+    current: JwtPayloadUser,
+    pagination?: Pagination,
+  ): Promise<RideBooking[]> {
     const isAdmin = RIDE_BOOKING_ADMIN_ROLES.includes(current.role);
     return this.bookingsRepository.find({
       where: isAdmin ? {} : { bookedByUserId: current.sub },
       relations: { ride: true },
       order: { createdAt: 'DESC' },
+      skip: pagination?.skip,
+      take: pagination?.take,
     });
   }
 

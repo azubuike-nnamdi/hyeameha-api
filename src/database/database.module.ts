@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -37,7 +38,12 @@ import { User } from '../users/entities/user.entity';
           PasswordResetOtp,
           ApiFailureLog,
         ],
-        synchronize: config.getOrThrow<string>('NODE_ENV') !== 'production',
+        // Schema changes only ever come from migrations, so every environment matches
+        // what `migration:run` produces. Outside production, pending migrations are
+        // applied automatically at startup; production runs them explicitly.
+        synchronize: false,
+        migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
+        migrationsRun: config.getOrThrow<string>('NODE_ENV') !== 'production',
         logging: config.getOrThrow<string>('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
