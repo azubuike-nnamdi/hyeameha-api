@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { join } from 'node:path';
 import { DataSource } from 'typeorm';
 import { PasswordResetOtp } from '../auth/entities/password-reset-otp.entity';
 import { Event } from '../events/entities/event.entity';
@@ -45,7 +46,8 @@ export default new DataSource({
         PasswordResetOtp,
         ApiFailureLog,
       ],
-  migrations: ['src/database/migrations/*.ts'],
+  // Resolves to src/…/*.ts under ts-node and dist/…/*.js after `nest build`.
+  migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
   extra: {
     connectionTimeoutMillis: 10_000,
   },

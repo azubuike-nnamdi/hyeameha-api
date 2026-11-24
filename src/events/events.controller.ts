@@ -46,6 +46,8 @@ import {
 } from './events.messages';
 import { toEventResponseDto } from './mappers/event.mapper';
 import { EventsService } from './events.service';
+import { PartnerPayloadPipe } from './pipes/partner-payload.pipe';
+import { EVENT_MANAGE_ROLES } from '../users/constants/user-role';
 
 const partnerProxyOkResponse = {
   description: 'Partner API response envelope',
@@ -84,16 +86,16 @@ const eventDeleteOkResponse = {
 )
 @ApiBearerAuth('access-token')
 @ApiUnauthorizedResponse({ description: 'Missing or invalid access token' })
-@ApiForbiddenResponse({ description: 'Admin role required' })
+@ApiForbiddenResponse({ description: 'super_admin or admin role required' })
 @Controller('events')
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   @Post()
-  @Roles('admin')
+  @Roles(...EVENT_MANAGE_ROLES)
   @UseGuards(RolesGuard)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a local event (admin only)' })
+  @ApiOperation({ summary: 'Create a local event (super_admin or admin)' })
   @ApiBody({ type: CreateEventDto })
   @ApiCreatedResponse({ type: EventApiResponseDto })
   async create(
@@ -124,7 +126,7 @@ export class EventsController {
   @ApiOperation({
     summary: 'Calculate ticket charges (partner events)',
     description:
-      'Proxies to the eGotickets partner API. Request body is forwarded as-is.',
+      'Proxies to the eGotickets partner API. Body must be a JSON object (max 16 KB, depth 5); it is otherwise forwarded unchanged.',
   })
   @ApiBody({
     schema: { type: 'object', additionalProperties: true },
@@ -135,7 +137,7 @@ export class EventsController {
   })
   async calculateCharges(
     @Param('id') id: string,
-    @Body() body: Record<string, unknown>,
+    @Body(PartnerPayloadPipe) body: Record<string, unknown>,
   ): Promise<ApiDataResponse<Record<string, unknown>>> {
     const data = await this.eventsService.calculateCharges(id, body);
     return apiResponse(data, EVENT_CALCULATE_CHARGES_SUCCESS_MESSAGE);
@@ -145,7 +147,7 @@ export class EventsController {
   @ApiOperation({
     summary: 'Buy ticket (partner events)',
     description:
-      'Proxies to the eGotickets partner API. Request body is forwarded as-is.',
+      'Proxies to the eGotickets partner API. Body must be a JSON object (max 16 KB, depth 5); it is otherwise forwarded unchanged.',
   })
   @ApiBody({
     schema: { type: 'object', additionalProperties: true },
@@ -156,9 +158,10 @@ export class EventsController {
   })
   async buyTicket(
     @Param('id') id: string,
-    @Body() body: Record<string, unknown>,
+    @CurrentUser() current: JwtPayloadUser,
+    @Body(PartnerPayloadPipe) body: Record<string, unknown>,
   ): Promise<ApiDataResponse<Record<string, unknown>>> {
-    const data = await this.eventsService.buyTicket(id, body);
+    const data = await this.eventsService.buyTicket(id, body, current.sub);
     return apiResponse(data, EVENT_BUY_TICKET_SUCCESS_MESSAGE);
   }
 
@@ -172,9 +175,9 @@ export class EventsController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  @Roles(...EVENT_MANAGE_ROLES)
   @UseGuards(RolesGuard)
-  @ApiOperation({ summary: 'Update a local event (admin only)' })
+  @ApiOperation({ summary: 'Update a local event (super_admin or admin)' })
   @ApiBody({ type: UpdateEventDto })
   @ApiOkResponse({ type: EventApiResponseDto })
   @ApiNotFoundResponse({ description: 'Event not found' })
@@ -188,10 +191,10 @@ export class EventsController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  @Roles(...EVENT_MANAGE_ROLES)
   @UseGuards(RolesGuard)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete a local event (admin only)' })
+  @ApiOperation({ summary: 'Delete a local event (super_admin or admin)' })
   @ApiOkResponse(eventDeleteOkResponse)
   @ApiNotFoundResponse({ description: 'Event not found' })
   async remove(@Param('id') id: string): Promise<ApiDataResponse<null>> {

@@ -5,7 +5,7 @@ export class CreateRidesTable1745257200000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE "rides" (
+      CREATE TABLE IF NOT EXISTS "rides" (
         "id" uuid NOT NULL DEFAULT gen_random_uuid(),
         "vehicle_type" character varying(32) NOT NULL,
         "service_tier" character varying(32) NOT NULL,

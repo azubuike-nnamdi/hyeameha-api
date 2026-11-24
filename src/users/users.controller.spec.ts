@@ -68,7 +68,8 @@ describe('UsersController', () => {
         updatedAt: new Date(),
       },
     ]);
-    const result = await controller.findAll();
+    const result = await controller.findAll({});
+    expect(usersService.findAll).toHaveBeenCalledWith({ skip: 0, take: 50 });
     expect(result.data).toHaveLength(1);
     expect(
       (result.data[0] as { passwordHash?: string }).passwordHash,

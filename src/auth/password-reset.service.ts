@@ -11,7 +11,10 @@ import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { MailService } from '../mail/mail.service';
 import { UsersService } from '../users/users.service';
+import { normalizeEmail } from '../common/validation/normalize-email';
 import { PasswordResetOtp } from './entities/password-reset-otp.entity';
+
+const INVALID_CODE_MESSAGE = 'Invalid or expired verification code';
 
 @Injectable()
 export class PasswordResetService {
@@ -25,22 +28,26 @@ export class PasswordResetService {
     private readonly config: ConfigService,
   ) {}
 
+  /**
+   * Always resolves the same way. The OTP is created and emailed in the background so
+   * response time does not reveal whether an account exists.
+   */
   async requestPasswordReset(email: string): Promise<void> {
-    const normalizedEmail = email.trim();
+    const normalizedEmail = normalizeEmail(email);
     const user = await this.usersService.findByEmail(normalizedEmail);
 
     if (user) {
-      try {
-        await this.createAndSendOtp(user.id, normalizedEmail, user.firstName);
-      } catch (error: unknown) {
+      void this.createAndSendOtp(
+        user.id,
+        normalizedEmail,
+        user.firstName,
+      ).catch((error: unknown) => {
         this.logger.error(
-          `Password reset OTP email failed for ${normalizedEmail}`,
+          'Password reset OTP email failed',
           error instanceof Error ? error.stack : String(error),
         );
-      }
+      });
     }
-
-    return;
   }
 
   async resetPassword(
@@ -48,7 +55,7 @@ export class PasswordResetService {
     otp: string,
     newPassword: string,
   ): Promise<void> {
-    const normalizedEmail = email.trim();
+    const normalizedEmail = normalizeEmail(email);
     const record = await this.otpRepository.findOne({
       where: { email: normalizedEmail },
       order: { createdAt: 'DESC' },
@@ -58,12 +65,33 @@ export class PasswordResetService {
       if (record) {
         await this.otpRepository.delete(record.id);
       }
-      throw new UnauthorizedException('Invalid or expired verification code');
+      throw new UnauthorizedException(INVALID_CODE_MESSAGE);
+    }
+
+    // Reserve an attempt atomically before comparing, so parallel guesses cannot
+    // exceed the limit.
+    const maxAttempts = this.config.get<number>(
+      'PASSWORD_RESET_OTP_MAX_ATTEMPTS',
+      5,
+    );
+    const reserved = await this.otpRepository
+      .createQueryBuilder()
+      .update(PasswordResetOtp)
+      .set({ attempts: () => '"attempts" + 1' })
+      .where('id = :id', { id: record.id })
+      .andWhere('"attempts" < :maxAttempts', { maxAttempts })
+      .execute();
+    if (!reserved.affected) {
+      await this.otpRepository.delete(record.id);
+      throw new UnauthorizedException(INVALID_CODE_MESSAGE);
     }
 
     const valid = await bcrypt.compare(otp, record.otpHash);
     if (!valid) {
-      throw new UnauthorizedException('Invalid or expired verification code');
+      if (record.attempts + 1 >= maxAttempts) {
+        await this.otpRepository.delete(record.id);
+      }
+      throw new UnauthorizedException(INVALID_CODE_MESSAGE);
     }
 
     await this.usersService.resetPassword(record.userId, newPassword);

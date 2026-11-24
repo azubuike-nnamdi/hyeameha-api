@@ -6,6 +6,8 @@ import {
   HttpStatus,
   Param,
   Post,
+  ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -21,7 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayloadUser } from '../auth/types/jwt-payload-user';
-import { apiResponse } from '../common';
+import { apiResponse, PaginationQueryDto, toPagination } from '../common';
 import { ApiFailureTag } from '../logging';
 import {
   AIRPORT_PICKUP_BOOKING_CREATE_SUCCESS_MESSAGE,
@@ -98,11 +100,17 @@ export class AirportPickupBookingsController {
   @ApiOperation({
     summary: 'List airport pickup bookings',
     description:
-      'Users see their own bookings. Admins and super_admins see all bookings.',
+      'Users see their own bookings. Admins and super_admins see all bookings. Paginated with `?page=&limit=` (default 50, max 100).',
   })
   @ApiOkResponse({ type: AirportPickupBookingListApiResponseDto })
-  async findAll(@CurrentUser() current: JwtPayloadUser) {
-    const bookings = await this.bookingsService.findAll(current);
+  async findAll(
+    @CurrentUser() current: JwtPayloadUser,
+    @Query() query: PaginationQueryDto,
+  ) {
+    const bookings = await this.bookingsService.findAll(
+      current,
+      toPagination(query),
+    );
     return apiResponse(
       bookings.map(toAirportPickupBookingResponseDto),
       AIRPORT_PICKUP_BOOKINGS_LIST_SUCCESS_MESSAGE,
@@ -118,7 +126,7 @@ export class AirportPickupBookingsController {
   @ApiOkResponse({ type: AirportPickupBookingApiResponseDto })
   @ApiNotFoundResponse({ description: 'Airport pickup booking not found' })
   async findOne(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() current: JwtPayloadUser,
   ) {
     const booking = await this.bookingsService.findOne(id, current);

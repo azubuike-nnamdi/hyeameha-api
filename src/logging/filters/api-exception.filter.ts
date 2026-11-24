@@ -4,6 +4,7 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
   type ExecutionContext,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
@@ -31,6 +32,8 @@ type HttpExceptionResponseBody = {
 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(ApiExceptionFilter.name);
+
   constructor(
     private readonly httpAdapterHost: HttpAdapterHost,
     private readonly failureLogger: ApiFailureLoggerService,
@@ -48,6 +51,14 @@ export class ApiExceptionFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
+    if (!(exception instanceof HttpException)) {
+      // Unexpected errors: keep details in server logs, never in the response.
+      this.logger.error(
+        `Unhandled error on ${request.method} ${request.url.split('?')[0]}`,
+        exception instanceof Error ? exception.stack : String(exception),
+      );
+    }
+
     const responseBody: string | HttpExceptionResponseBody =
       exception instanceof HttpException
         ? exception.getResponse()
@@ -56,7 +67,11 @@ export class ApiExceptionFilter implements ExceptionFilter {
     const normalizedBody: ApiDataResponse<Record<string, unknown> | null> =
       normalizeApiErrorResponse(status, responseBody);
 
-    if (status >= 400 && !shouldSkipApiFailureLog(request.url)) {
+    if (
+      status >= 400 &&
+      status !== Number(HttpStatus.TOO_MANY_REQUESTS) &&
+      !shouldSkipApiFailureLog(request.url)
+    ) {
       let explicitTag: string | undefined;
       if ('getHandler' in host && 'getClass' in host) {
         const executionContext = host as ExecutionContext;

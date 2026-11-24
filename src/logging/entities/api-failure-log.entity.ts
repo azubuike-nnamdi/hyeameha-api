@@ -47,6 +47,7 @@ export class ApiFailureLog {
   @Column({ name: 'ip_address', type: 'varchar', length: 64, nullable: true })
   ipAddress: string | null;
 
+  @Index('IDX_api_failure_logs_created_at')
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 }

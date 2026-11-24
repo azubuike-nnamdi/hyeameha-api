@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -142,7 +143,7 @@ export class RidesController {
   })
   @ApiOkResponse({ type: RideApiResponseDto })
   @ApiNotFoundResponse({ description: 'Ride not found' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const ride = await this.ridesService.findOne(id);
     return apiResponse(toRideResponseDto(ride), RIDE_GET_SUCCESS_MESSAGE);
   }
@@ -159,7 +160,7 @@ export class RidesController {
   @ApiOkResponse({ type: RideApiResponseDto })
   @ApiNotFoundResponse({ description: 'Ride not found' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() current: JwtPayloadUser,
     @Body() dto: UpdateRideDto,
   ) {
@@ -178,7 +179,9 @@ export class RidesController {
   })
   @ApiOkResponse({ type: RideDeleteApiResponseDto })
   @ApiNotFoundResponse({ description: 'Ride not found' })
-  async remove(@Param('id') id: string): Promise<ApiDataResponse<null>> {
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ApiDataResponse<null>> {
     await this.ridesService.remove(id);
     return apiResponse(null, RIDE_DELETE_SUCCESS_MESSAGE);
   }

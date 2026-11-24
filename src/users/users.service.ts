@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, QueryFailedError, Repository } from 'typeorm';
+import { IsNull, QueryFailedError, Raw, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { ACCOUNT_DELETION_GRACE_DAYS } from './constants';
@@ -14,6 +14,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import type { UserPublic } from './types/user-public';
+import { normalizeEmail } from '../common/validation/normalize-email';
+import type { Pagination } from '../common/dto/pagination-query.dto';
+
+/** Increments the session version so every outstanding access/refresh token stops working. */
+const BUMP_TOKEN_VERSION = () => '"token_version" + 1';
 
 /**
  * UsersService for the Hyeameha API: persistence for `User` entities and a thin
@@ -29,9 +34,17 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
+    const email = normalizeEmail(createUserDto.email);
+    // Case-insensitive duplicate check (covers legacy mixed-case rows and soft-deleted accounts).
+    const existing = await this.usersRepository.findOne({
+      where: { email: this.emailEquals(email) },
+    });
+    if (existing) {
+      throw new ConflictException('Email already registered');
+    }
     const passwordHash: string = await bcrypt.hash(createUserDto.password, 10);
     const user: User = this.usersRepository.create({
-      email: createUserDto.email,
+      email,
       passwordHash,
       firstName: createUserDto.firstName,
       lastName: createUserDto.lastName,
@@ -66,15 +79,28 @@ export class UsersService {
     return code === '23505';
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(pagination?: Pagination): Promise<User[]> {
     return this.usersRepository.find({
       where: { deletedAt: IsNull() },
+      order: { createdAt: 'DESC' },
+      skip: pagination?.skip,
+      take: pagination?.take,
     });
   }
 
+  /** Case-insensitive lookup; matches legacy rows stored with mixed-case emails. */
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({
-      where: { email, deletedAt: IsNull() },
+      where: {
+        email: this.emailEquals(normalizeEmail(email)),
+        deletedAt: IsNull(),
+      },
+    });
+  }
+
+  private emailEquals(normalized: string) {
+    return Raw((alias) => `LOWER(${alias}) = :normalizedEmail`, {
+      normalizedEmail: normalized,
     });
   }
 
@@ -92,6 +118,7 @@ export class UsersService {
       lastName: user.lastName,
       phone: user.phone,
       role: user.role,
+      tokenVersion: user.tokenVersion ?? 0,
       deletedAt: user.deletedAt,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -139,6 +166,7 @@ export class UsersService {
     await this.usersRepository.update(userId, {
       deletedAt,
       refreshTokenHash: null,
+      tokenVersion: BUMP_TOKEN_VERSION,
     });
 
     const scheduledPermanentDeletionAt = new Date(deletedAt);
@@ -174,16 +202,22 @@ export class UsersService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    await this.usersRepository.update(userId, {
-      passwordHash: await bcrypt.hash(newPassword, 10),
-    });
+    await this.setPasswordAndRevokeSessions(userId, newPassword);
   }
 
-  /** Password reset via OTP — invalidates existing refresh sessions. */
+  /** Password reset via OTP — revokes all existing access and refresh tokens. */
   async resetPassword(userId: string, newPassword: string): Promise<void> {
+    await this.setPasswordAndRevokeSessions(userId, newPassword);
+  }
+
+  private async setPasswordAndRevokeSessions(
+    userId: string,
+    newPassword: string,
+  ): Promise<void> {
     await this.usersRepository.update(userId, {
       passwordHash: await bcrypt.hash(newPassword, 10),
       refreshTokenHash: null,
+      tokenVersion: BUMP_TOKEN_VERSION,
     });
   }
 

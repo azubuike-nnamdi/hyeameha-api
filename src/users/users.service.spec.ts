@@ -83,6 +83,24 @@ describe('UsersService', () => {
     );
   });
 
+  it('rejects a registration whose email differs only by case', async () => {
+    repository.findOne.mockResolvedValueOnce({ id: 'existing' });
+    await expect(
+      service.create({ ...createDto, email: 'A@B.COM' }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('stores the email lower-cased', async () => {
+    repository.findOne.mockResolvedValueOnce(null);
+    repository.create.mockImplementation((v: unknown) => v);
+    repository.save.mockImplementation((v: unknown) => Promise.resolve(v));
+    await service.create({ ...createDto, email: ' A@B.COM ' });
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'a@b.com' }),
+    );
+  });
+
   it('finds all non-deleted users', async () => {
     repository.find.mockResolvedValue([
       {
@@ -149,8 +167,7 @@ describe('UsersService', () => {
       payload: { deletedAt: Date; refreshTokenHash: null },
     ];
     const firstUpdate = jest.mocked(repository.update).mock.calls[0] as
-      | AccountDeletionUpdate
-      | undefined;
+      AccountDeletionUpdate | undefined;
     expect(firstUpdate).toBeDefined();
     expect(firstUpdate?.[1].deletedAt).toBeInstanceOf(Date);
     expect(result.gracePeriodDays).toBe(7);
@@ -188,7 +205,13 @@ describe('UsersService', () => {
     (bcrypt.compare as jest.Mock).mockResolvedValue(true);
     repository.update.mockResolvedValue({ affected: 1 });
     await service.changePassword('u1', 'old', 'newpass12345');
-    expect(repository.update).toHaveBeenCalled();
+    expect(repository.update).toHaveBeenCalledWith(
+      'u1',
+      expect.objectContaining({
+        refreshTokenHash: null,
+        tokenVersion: expect.any(Function) as unknown,
+      }),
+    );
   });
 
   it('purges soft-deleted users past grace via query builder', async () => {

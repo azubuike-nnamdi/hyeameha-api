@@ -2,9 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsString, Matches, MaxLength } from 'class-validator';
 import { PHONE_DIGITS_ONLY_MESSAGE } from '../../common/validation/phone-policy';
 import {
+  PASSWORD_MAX_LENGTH,
   STRONG_PASSWORD_MESSAGE,
   STRONG_PASSWORD_PATTERN,
 } from '../../common/validation/password-policy';
+import { NormalizeEmail } from '../../common/validation/normalize-email';
 
 export class CreateUserDto {
   @ApiProperty()
@@ -18,6 +20,7 @@ export class CreateUserDto {
   lastName: string;
 
   @ApiProperty()
+  @NormalizeEmail()
   @IsEmail()
   email: string;
 
@@ -27,6 +30,7 @@ export class CreateUserDto {
   })
   @IsString()
   @Matches(STRONG_PASSWORD_PATTERN, { message: STRONG_PASSWORD_MESSAGE })
+  @MaxLength(PASSWORD_MAX_LENGTH)
   password: string;
 
   @ApiProperty({
